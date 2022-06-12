@@ -142,7 +142,7 @@ macos_catalina_task:
   macos_instance:
     image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
   install_instructions_script: |-
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
     brew install python@3.11
     brew install git
