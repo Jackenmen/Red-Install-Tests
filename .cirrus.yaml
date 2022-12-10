@@ -7,7 +7,7 @@ install_red_venv39: &INSTALL_RED_VENV39
 
     source ~/redenv/bin/activate
 
-    python -m pip install -U pip setuptools wheel
+    python -m pip install -U pip wheel
     python -m pip install -U "$RED_PACKAGE_NAME[postgres]"
 
     ./check_java_version.py 11
@@ -33,7 +33,7 @@ install_pyenv_and_red: &INSTALL_PYENV_AND_RED
 
     pyenv shell redbot
 
-    python -m pip install -U pip setuptools wheel
+    python -m pip install -U pip wheel
     python -m pip install -U "$RED_PACKAGE_NAME[postgres]"
 
     ./check_java_version.py 11
@@ -59,7 +59,7 @@ install_pyenv_and_red38: &INSTALL_PYENV_AND_RED38
 
     pyenv shell redbot
 
-    python -m pip install -U pip setuptools wheel
+    python -m pip install -U pip wheel
     python -m pip install -U "$RED_PACKAGE_NAME[postgres]"
 
     ./check_java_version.py 11
@@ -122,7 +122,7 @@ windows_task:
 
     - '"%userprofile%\redenv\Scripts\activate.bat"'
 
-    - python -m pip install -U pip setuptools wheel
+    - python -m pip install -U pip wheel
     - python -m pip install -U "%RED_PACKAGE_NAME%[postgres]"
   test_red_script:
     - '"%userprofile%\redenv\Scripts\activate.bat"'
