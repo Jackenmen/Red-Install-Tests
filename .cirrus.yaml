@@ -129,11 +129,11 @@ install_red_on_rhel8_derivatives: &INSTALL_RED_ON_RHEL8_DERIVATIVES
   <<: *INSTALL_RED_VENV39
 install_red_on_rhel9_derivatives: &INSTALL_RED_ON_RHEL9_DERIVATIVES
   install_instructions_script: |-
-    sudo dnf -y install python39 git java-11-openjdk-headless @development nano
+    sudo dnf -y install python39 python3-devel git java-11-openjdk-headless @development nano
   <<: *INSTALL_RED_VENV39
 install_red_on_opensuse_leap_15: &INSTALL_RED_ON_OPENSUSE_LEAP_15
   install_instructions_script: |-
-    sudo zypper -n install python310 git-core java-11-openjdk-headless nano
+    sudo zypper -n install python310 python310-devel git-core java-11-openjdk-headless nano
     sudo zypper -n install -t pattern devel_basis
   <<: *INSTALL_RED_VENV310
 
@@ -283,7 +283,7 @@ fedora_35_task:
     cpu: 1
     memory: 2G
   install_instructions_script: |-
-    sudo dnf -y install python3.10 git java-11-openjdk-headless @development-tools nano
+    sudo dnf -y install python3.10 python3.10-devel git java-11-openjdk-headless @development-tools nano
   <<: *INSTALL_RED_VENV310
 fedora_36_task:
   container:
@@ -293,7 +293,7 @@ fedora_36_task:
   install_sudo_script: |-
     dnf -y install sudo
   install_instructions_script: |-
-    sudo dnf -y install python3.10 git java-11-openjdk-headless @development-tools nano
+    sudo dnf -y install python3.10 python3.10-devel git java-11-openjdk-headless @development-tools nano
   <<: *INSTALL_RED_VENV310
 
 opensuse_leap_15_4_task:
@@ -311,7 +311,7 @@ opensuse_tumbleweed_task:
   install_sudo_script: |-
     zypper -n install sudo
   install_instructions_script: |-
-    sudo zypper -n install python311 git-core java-11-openjdk-headless nano
+    sudo zypper -n install python311 python311-devel git-core java-11-openjdk-headless nano
     sudo zypper -n install -t pattern devel_basis
   <<: *INSTALL_RED_VENV311
 
