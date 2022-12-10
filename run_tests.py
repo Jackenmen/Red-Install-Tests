@@ -11,6 +11,10 @@ import aiohttp
 import redbot
 
 
+TEST_CODE_0 = "import spam; exit(spam.system('python -c \"exit(0)\"') != 0)"
+TEST_CODE_1 = "import spam; exit(spam.system('python -c \"exit(1)\"') == 0)"
+
+
 async def main() -> None:
     skip_tests = os.getenv("RED_SKIP_TESTS", "")
     if skip_tests:
@@ -18,6 +22,7 @@ async def main() -> None:
         raise SystemExit(0)
 
     package_name = os.environ["RED_PACKAGE_NAME"]
+    red_install_tests_repo = os.getcwd()
     os.mkdir("Red-DiscordBot")
     os.chdir("Red-DiscordBot")
 
@@ -59,6 +64,14 @@ async def main() -> None:
     for args in (
         (sys.executable, "-m", "pip", "install", "-U", f"{package_name}[test]"),
         (sys.executable, "-m", "pytest"),
+    ):
+        subprocess.run(args, check=True)
+
+    os.chdir(red_install_tests_repo)
+    for args in (
+        (sys.executable, "-m", "pip", "install", "."),
+        (sys.executable, "-c", TEST_CODE_0),
+        (sys.executable, "-c", TEST_CODE_1),
     ):
         subprocess.run(args, check=True)
 
