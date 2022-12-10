@@ -14,7 +14,7 @@ choco feature disable -n=showDownloadProgress
 # ^-- stop log spam by disabling download progress (not part of instructions)
 choco upgrade git --params "/GitOnlyOnPath /WindowsTerminal" -y
 choco upgrade visualstudio2022-workload-vctools -y
-choco upgrade python3 -y --version 3.10.9
+choco upgrade python311 -y
 
 choco upgrade temurin11 -y
 "@

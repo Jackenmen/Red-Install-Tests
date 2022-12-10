@@ -27,7 +27,46 @@ install_red_venv310: &INSTALL_RED_VENV310
   test_red_script: |-
     source ~/redenv/bin/activate
     ./run_tests.py
+install_red_venv311: &INSTALL_RED_VENV311
+  install_red_script: |-
+    python3.11 -m venv ~/redenv
+
+    source ~/redenv/bin/activate
+
+    python -m pip install -U pip setuptools wheel
+    python -m pip install -U "$RED_PACKAGE_NAME"
+
+    ./check_java_version.py 11
+  test_red_script: |-
+    source ~/redenv/bin/activate
+    ./run_tests.py
 install_pyenv_and_red: &INSTALL_PYENV_AND_RED
+  install_pyenv_script: |-
+    command -v pyenv && pyenv update || curl https://pyenv.run | bash
+
+    profile=$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))
+    rcfile=$([ -n "$ZSH_VERSION" ] && echo ~/.zshrc || echo ~/.bashrc)
+    printf '%s\n%s\n%s\n' 'export PYENV_ROOT="$HOME/.pyenv"' 'export PATH="$PYENV_ROOT/bin:$PATH"' "$([ -f "$profile" ] && cat "$profile")" > "$profile"
+    echo 'eval "$(pyenv init --path)"' >> "$profile"
+    echo 'eval "$(pyenv init -)"' >> "$rcfile"
+    echo 'eval "$(pyenv virtualenv-init -)"' >> "$rcfile"
+  install_python_with_pyenv_script: |-
+    CONFIGURE_OPTS=--enable-optimizations pyenv install 3.11.1 -v
+
+    pyenv global 3.11.1
+  install_red_script: |-
+    pyenv virtualenv redbot
+
+    pyenv shell redbot
+
+    python -m pip install -U pip wheel
+    python -m pip install -U "$RED_PACKAGE_NAME[postgres]"
+
+    ./check_java_version.py 11
+  test_red_script: |-
+    pyenv shell redbot
+    ./run_tests.py
+install_pyenv_and_red310: &INSTALL_PYENV_AND_RED310
   install_pyenv_script: |-
     command -v pyenv && pyenv update || curl https://pyenv.run | bash
 
@@ -105,15 +144,15 @@ macos_catalina_task:
   install_instructions_script: |-
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
-    brew install python@3.10
+    brew install python@3.11
     brew install git
     brew tap homebrew/cask-versions
     brew install --cask temurin11
 
     profile=$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))
-    echo 'export PATH="$(brew --prefix)/opt/python@3.10/bin:$PATH"' >> "$profile"
+    echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$profile"
     source "$profile"
-  <<: *INSTALL_RED_VENV310
+  <<: *INSTALL_RED_VENV311
 
 windows_task:
   compute_engine_instance:
@@ -131,7 +170,7 @@ windows_task:
     - C:\ProgramData\chocolatey\bin\RefreshEnv.cmd
     - echo PATH=%PATH% >> "%CIRRUS_ENV%"
   install_red_script:
-    - py -3.10 -m venv "%userprofile%\redenv"
+    - py -3.11 -m venv "%userprofile%\redenv"
 
     - '"%userprofile%\redenv\Scripts\activate.bat"'
 
@@ -272,9 +311,9 @@ opensuse_tumbleweed_task:
   install_sudo_script: |-
     zypper -n install sudo
   install_instructions_script: |-
-    sudo zypper -n install python310-base python310-pip git-core java-11-openjdk-headless nano
+    sudo zypper -n install python311-base python311-pip git-core java-11-openjdk-headless nano
     sudo zypper -n install -t pattern devel_basis
-  <<: *INSTALL_RED_VENV310
+  <<: *INSTALL_RED_VENV311
 
 oracle_linux_8_task:
   container:
@@ -306,7 +345,7 @@ raspberry_pi_os_10_armhf_task:
     sudo apt -y install cmake make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libgdbm-dev uuid-dev python3-openssl git openjdk-11-jre-headless nano
   env:
     CXX: /usr/bin/g++
-  <<: *INSTALL_PYENV_AND_RED
+  <<: *INSTALL_PYENV_AND_RED310
 raspberry_pi_os_11_armhf_task: &RASPBERRY_PI_OS_11
   arm_container:
     image: lpenz/rpios-bullseye-armhf
@@ -355,8 +394,8 @@ ubuntu_1804_bionic_task:
 
     sudo add-apt-repository -y ppa:deadsnakes/ppa
 
-    sudo apt -y install python3.10 python3.10-dev python3.10-venv python3-pip git openjdk-11-jre-headless build-essential nano
-  <<: *INSTALL_RED_VENV310
+    sudo apt -y install python3.11 python3.11-dev python3.11-venv python3-pip git openjdk-11-jre-headless build-essential nano
+  <<: *INSTALL_RED_VENV311
 ubuntu_2004_focal_task:
   compute_engine_instance:
     image_project: ubuntu-os-cloud
@@ -390,5 +429,5 @@ ubuntu_devel_task:
     apt -y install sudo
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install python3.10 python3.10-dev python3.10-venv python3-pip git openjdk-11-jre-headless build-essential nano
-  <<: *INSTALL_RED_VENV310
+    sudo apt -y install python3.11 python3.11-dev python3.11-venv python3-pip git openjdk-11-jre-headless build-essential nano
+  <<: *INSTALL_RED_VENV311
