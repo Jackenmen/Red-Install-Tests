@@ -14,7 +14,46 @@ install_red_venv39: &INSTALL_RED_VENV39
   test_red_script: |-
     source ~/redenv/bin/activate
     ./run_tests.py
+install_red_venv310: &INSTALL_RED_VENV310
+  install_red_script: |-
+    python3.10 -m venv ~/redenv
+
+    source ~/redenv/bin/activate
+
+    python -m pip install -U pip setuptools wheel
+    python -m pip install -U "$RED_PACKAGE_NAME"
+
+    ./check_java_version.py 11
+  test_red_script: |-
+    source ~/redenv/bin/activate
+    ./run_tests.py
 install_pyenv_and_red: &INSTALL_PYENV_AND_RED
+  install_pyenv_script: |-
+    command -v pyenv && pyenv update || curl https://pyenv.run | bash
+
+    profile=$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))
+    rcfile=$([ -n "$ZSH_VERSION" ] && echo ~/.zshrc || echo ~/.bashrc)
+    printf '%s\n%s\n%s\n' 'export PYENV_ROOT="$HOME/.pyenv"' 'export PATH="$PYENV_ROOT/bin:$PATH"' "$([ -f "$profile" ] && cat "$profile")" > "$profile"
+    echo 'eval "$(pyenv init --path)"' >> "$profile"
+    echo 'eval "$(pyenv init -)"' >> "$rcfile"
+    echo 'eval "$(pyenv virtualenv-init -)"' >> "$rcfile"
+  install_python_with_pyenv_script: |-
+    CONFIGURE_OPTS=--enable-optimizations pyenv install 3.10.9 -v
+
+    pyenv global 3.10.9
+  install_red_script: |-
+    pyenv virtualenv redbot
+
+    pyenv shell redbot
+
+    python -m pip install -U pip wheel
+    python -m pip install -U "$RED_PACKAGE_NAME[postgres]"
+
+    ./check_java_version.py 11
+  test_red_script: |-
+    pyenv shell redbot
+    ./run_tests.py
+install_pyenv_and_red39: &INSTALL_PYENV_AND_RED39
   install_pyenv_script: |-
     command -v pyenv && pyenv update || curl https://pyenv.run | bash
 
@@ -28,32 +67,6 @@ install_pyenv_and_red: &INSTALL_PYENV_AND_RED
     CONFIGURE_OPTS=--enable-optimizations pyenv install 3.9.16 -v
 
     pyenv global 3.9.16
-  install_red_script: |-
-    pyenv virtualenv redbot
-
-    pyenv shell redbot
-
-    python -m pip install -U pip wheel
-    python -m pip install -U "$RED_PACKAGE_NAME[postgres]"
-
-    ./check_java_version.py 11
-  test_red_script: |-
-    pyenv shell redbot
-    ./run_tests.py
-install_pyenv_and_red38: &INSTALL_PYENV_AND_RED38
-  install_pyenv_script: |-
-    command -v pyenv && pyenv update || curl https://pyenv.run | bash
-
-    profile=$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))
-    rcfile=$([ -n "$ZSH_VERSION" ] && echo ~/.zshrc || echo ~/.bashrc)
-    printf '%s\n%s\n%s\n' 'export PYENV_ROOT="$HOME/.pyenv"' 'export PATH="$PYENV_ROOT/bin:$PATH"' "$([ -f "$profile" ] && cat "$profile")" > "$profile"
-    echo 'eval "$(pyenv init --path)"' >> "$profile"
-    echo 'eval "$(pyenv init -)"' >> "$rcfile"
-    echo 'eval "$(pyenv virtualenv-init -)"' >> "$rcfile"
-  install_python_with_pyenv_script: |-
-    CONFIGURE_OPTS=--enable-optimizations pyenv install 3.8.16 -v
-
-    pyenv global 3.8.16
   install_red_script: |-
     pyenv virtualenv redbot
 
@@ -81,9 +94,9 @@ install_red_on_rhel9_derivatives: &INSTALL_RED_ON_RHEL9_DERIVATIVES
   <<: *INSTALL_RED_VENV39
 install_red_on_opensuse_leap_15: &INSTALL_RED_ON_OPENSUSE_LEAP_15
   install_instructions_script: |-
-    sudo zypper -n install python39-base python39-pip git-core java-11-openjdk-headless nano
+    sudo zypper -n install python310-base python310-pip git-core java-11-openjdk-headless nano
     sudo zypper -n install -t pattern devel_basis
-  <<: *INSTALL_RED_VENV39
+  <<: *INSTALL_RED_VENV310
 
 
 macos_catalina_task:
@@ -92,15 +105,15 @@ macos_catalina_task:
   install_instructions_script: |-
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
-    brew install python@3.9
+    brew install python@3.10
     brew install git
     brew tap homebrew/cask-versions
     brew install --cask temurin11
 
     profile=$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))
-    echo 'export PATH="$(brew --prefix)/opt/python@3.9/bin:$PATH"' >> "$profile"
+    echo 'export PATH="$(brew --prefix)/opt/python@3.10/bin:$PATH"' >> "$profile"
     source "$profile"
-  <<: *INSTALL_RED_VENV39
+  <<: *INSTALL_RED_VENV310
 
 windows_task:
   compute_engine_instance:
@@ -118,7 +131,7 @@ windows_task:
     - C:\ProgramData\chocolatey\bin\RefreshEnv.cmd
     - echo PATH=%PATH% >> "%CIRRUS_ENV%"
   install_red_script:
-    - py -3.9 -m venv "%userprofile%\redenv"
+    - py -3.10 -m venv "%userprofile%\redenv"
 
     - '"%userprofile%\redenv\Scripts\activate.bat"'
 
@@ -184,7 +197,7 @@ centos_7_task:
 
     sudo yum -y install https://repo.ius.io/ius-release-el7.rpm
     sudo yum -y swap git git236
-  <<: *INSTALL_PYENV_AND_RED
+  <<: *INSTALL_PYENV_AND_RED39
 
 centos_stream_8_task:
   compute_engine_instance:
@@ -209,7 +222,7 @@ debian_10_buster_task:
     memory: 2G
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libgdbm-dev uuid-dev python3-openssl git openjdk-11-jre-headless nano
+    sudo apt -y install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libgdbm-dev uuid-dev python3-openssl git openjdk-11-jre-headless nano
   env:
     CXX: /usr/bin/g++
   <<: *INSTALL_PYENV_AND_RED
@@ -231,8 +244,8 @@ fedora_35_task:
     cpu: 1
     memory: 2G
   install_instructions_script: |-
-    sudo dnf -y install python39 git java-11-openjdk-headless @development-tools nano
-  <<: *INSTALL_RED_VENV39
+    sudo dnf -y install python3.10 git java-11-openjdk-headless @development-tools nano
+  <<: *INSTALL_RED_VENV310
 fedora_36_task:
   container:
     image: fedora:36
@@ -241,8 +254,8 @@ fedora_36_task:
   install_sudo_script: |-
     dnf -y install sudo
   install_instructions_script: |-
-    sudo dnf -y install python39 git java-11-openjdk-headless @development-tools nano
-  <<: *INSTALL_RED_VENV39
+    sudo dnf -y install python3.10 git java-11-openjdk-headless @development-tools nano
+  <<: *INSTALL_RED_VENV310
 
 opensuse_leap_15_4_task:
   compute_engine_instance:
@@ -259,9 +272,9 @@ opensuse_tumbleweed_task:
   install_sudo_script: |-
     zypper -n install sudo
   install_instructions_script: |-
-    sudo zypper -n install python39-base python39-pip git-core java-11-openjdk-headless nano
+    sudo zypper -n install python310-base python310-pip git-core java-11-openjdk-headless nano
     sudo zypper -n install -t pattern devel_basis
-  <<: *INSTALL_RED_VENV39
+  <<: *INSTALL_RED_VENV310
 
 oracle_linux_8_task:
   container:
@@ -290,10 +303,10 @@ raspberry_pi_os_10_armhf_task:
     apt -y install sudo
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libgdbm-dev uuid-dev python3-openssl git openjdk-11-jre-headless nano
+    sudo apt -y install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libgdbm-dev uuid-dev python3-openssl git openjdk-11-jre-headless nano
   env:
     CXX: /usr/bin/g++
-  <<: *INSTALL_PYENV_AND_RED38
+  <<: *INSTALL_PYENV_AND_RED
 raspberry_pi_os_11_armhf_task: &RASPBERRY_PI_OS_11
   arm_container:
     image: lpenz/rpios-bullseye-armhf
@@ -342,8 +355,8 @@ ubuntu_1804_bionic_task:
 
     sudo add-apt-repository -y ppa:deadsnakes/ppa
 
-    sudo apt -y install python3.9 python3.9-dev python3.9-venv python3-pip git openjdk-11-jre-headless build-essential nano
-  <<: *INSTALL_RED_VENV39
+    sudo apt -y install python3.10 python3.10-dev python3.10-venv python3-pip git openjdk-11-jre-headless build-essential nano
+  <<: *INSTALL_RED_VENV310
 ubuntu_2004_focal_task:
   compute_engine_instance:
     image_project: ubuntu-os-cloud
@@ -352,9 +365,6 @@ ubuntu_2004_focal_task:
     memory: 2G
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install software-properties-common
-    sudo add-apt-repository -y ppa:git-core/ppa
-
     sudo apt -y install python3.9 python3.9-dev python3.9-venv python3-pip git openjdk-11-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV39
 ubuntu_2204_jammy_task:
@@ -365,11 +375,8 @@ ubuntu_2204_jammy_task:
     memory: 2G
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install software-properties-common
-    sudo add-apt-repository -y ppa:deadsnakes/ppa
-
-    sudo apt -y install python3.9 python3.9-dev python3.9-venv python3-pip git openjdk-11-jre-headless build-essential nano
-  <<: *INSTALL_RED_VENV39
+    sudo apt -y install python3.10 python3.10-dev python3.10-venv python3-pip git openjdk-11-jre-headless build-essential nano
+  <<: *INSTALL_RED_VENV310
 ubuntu_devel_task:
   container:
     image: ubuntu:devel
@@ -383,9 +390,5 @@ ubuntu_devel_task:
     apt -y install sudo
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install software-properties-common
-    sudo add-apt-repository -yu ppa:git-core/ppa
-
-    sudo apt -y install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libgdbm-dev uuid-dev python3-openssl git openjdk-11-jre-headless nano
-  env:
-    CXX: /usr/bin/g++
+    sudo apt -y install python3.10 python3.10-dev python3.10-venv python3-pip git openjdk-11-jre-headless build-essential nano
+  <<: *INSTALL_RED_VENV310

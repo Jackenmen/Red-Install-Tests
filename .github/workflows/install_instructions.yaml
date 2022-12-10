@@ -33,26 +33,26 @@ jobs:
 
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
-              brew install python@3.9
-              echo 'export PATH="/usr/local/opt/python@3.9/bin:$PATH"' >> ~/.bash_profile
+              brew install python@3.10
+              echo 'export PATH="/usr/local/opt/python@3.10/bin:$PATH"' >> ~/.bash_profile
               source ~/.bash_profile
               brew install git
               brew tap homebrew/cask-versions
               brew install --cask temurin11
-            venv_method: "venv39"
+            venv_method: "venv310"
           - os: macos-12
             run: |-
               rm /usr/local/bin/{2to3{,-3.10,-3.11},{idle3,pydoc3}{,.10,.11},python3{,.10,.11}{,-config}}
 
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
-              brew install python@3.9
-              echo 'export PATH="/usr/local/opt/python@3.9/bin:$PATH"' >> ~/.bash_profile
+              brew install python@3.10
+              echo 'export PATH="/usr/local/opt/python@3.10/bin:$PATH"' >> ~/.bash_profile
               source ~/.bash_profile
               brew install git
               brew tap homebrew/cask-versions
               brew install --cask temurin11
-            venv_method: "venv39"
+            venv_method: "venv310"
 
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container: ${{ matrix.container }}
@@ -72,21 +72,21 @@ jobs:
         shell: bash -leo pipefail {0}
 
       # Making a virtual environment and installing Red
-      - name: Install Red inside venv on Python 3.9 (Linux/Mac)
+      - name: Install Red inside venv on Python 3.10 (Linux/Mac)
         if: >-
-          matrix.venv_method == 'venv39'
+          matrix.venv_method == 'venv310'
         shell: bash -leo pipefail {0}
         run: |-
-          python3.9 -m venv ~/redenv
+          python3.10 -m venv ~/redenv
 
           source ~/redenv/bin/activate
 
           python -m pip install -U pip setuptools wheel
           python -m pip install -U "$RED_PACKAGE_NAME"
 
-      - name: Run tests inside venv on Python 3.9.
+      - name: Run tests inside venv on Python 3.10.
         if: >-
-          matrix.venv_method == 'venv39'
+          matrix.venv_method == 'venv310'
         shell: bash -leo pipefail {0}
         run: |-
           source ~/redenv/bin/activate
