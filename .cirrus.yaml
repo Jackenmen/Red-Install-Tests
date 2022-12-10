@@ -123,7 +123,7 @@ install_red_on_rhel8_derivatives: &INSTALL_RED_ON_RHEL8_DERIVATIVES
   install_instructions_script: |-
     sudo dnf -y update
     sudo dnf -y group install development
-    sudo dnf -y install python39 python39-pip python39-devel java-11-openjdk-headless nano git
+    sudo dnf -y install python39 python39-devel java-11-openjdk-headless nano git
 
     sudo alternatives --set java "java-11-openjdk.$(uname -i)"
   <<: *INSTALL_RED_VENV39
@@ -133,7 +133,7 @@ install_red_on_rhel9_derivatives: &INSTALL_RED_ON_RHEL9_DERIVATIVES
   <<: *INSTALL_RED_VENV39
 install_red_on_opensuse_leap_15: &INSTALL_RED_ON_OPENSUSE_LEAP_15
   install_instructions_script: |-
-    sudo zypper -n install python310-base python310-pip git-core java-11-openjdk-headless nano
+    sudo zypper -n install python310 git-core java-11-openjdk-headless nano
     sudo zypper -n install -t pattern devel_basis
   <<: *INSTALL_RED_VENV310
 
@@ -273,7 +273,7 @@ debian_11_bullseye_task:
     memory: 2G
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install python3 python3-dev python3-venv python3-pip git openjdk-11-jre-headless build-essential nano
+    sudo apt -y install python3 python3-dev python3-venv git openjdk-11-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV39
 
 fedora_35_task:
@@ -311,7 +311,7 @@ opensuse_tumbleweed_task:
   install_sudo_script: |-
     zypper -n install sudo
   install_instructions_script: |-
-    sudo zypper -n install python311-base python311-pip git-core java-11-openjdk-headless nano
+    sudo zypper -n install python311 git-core java-11-openjdk-headless nano
     sudo zypper -n install -t pattern devel_basis
   <<: *INSTALL_RED_VENV311
 
@@ -355,7 +355,7 @@ raspberry_pi_os_11_armhf_task: &RASPBERRY_PI_OS_11
     apt -y install sudo
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install python3 python3-dev python3-venv python3-pip git openjdk-11-jre-headless build-essential nano
+    sudo apt -y install python3 python3-dev python3-venv git openjdk-11-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV39
 raspberry_pi_os_11_aarch64_task:
   <<: *RASPBERRY_PI_OS_11
@@ -394,7 +394,7 @@ ubuntu_1804_bionic_task:
 
     sudo add-apt-repository -y ppa:deadsnakes/ppa
 
-    sudo apt -y install python3.11 python3.11-dev python3.11-venv python3-pip git openjdk-11-jre-headless build-essential nano
+    sudo apt -y install python3.11 python3.11-dev python3.11-venv git openjdk-11-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV311
 ubuntu_2004_focal_task:
   compute_engine_instance:
@@ -404,7 +404,7 @@ ubuntu_2004_focal_task:
     memory: 2G
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install python3.9 python3.9-dev python3.9-venv python3-pip git openjdk-11-jre-headless build-essential nano
+    sudo apt -y install python3.9 python3.9-dev python3.9-venv git openjdk-11-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV39
 ubuntu_2204_jammy_task:
   compute_engine_instance:
@@ -414,7 +414,7 @@ ubuntu_2204_jammy_task:
     memory: 2G
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install python3.10 python3.10-dev python3.10-venv python3-pip git openjdk-11-jre-headless build-essential nano
+    sudo apt -y install python3.10 python3.10-dev python3.10-venv git openjdk-11-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV310
 ubuntu_devel_task:
   container:
@@ -429,5 +429,5 @@ ubuntu_devel_task:
     apt -y install sudo
   install_instructions_script: |-
     sudo apt update
-    sudo apt -y install python3.11 python3.11-dev python3.11-venv python3-pip git openjdk-11-jre-headless build-essential nano
+    sudo apt -y install python3.11 python3.11-dev python3.11-venv git openjdk-11-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV311
