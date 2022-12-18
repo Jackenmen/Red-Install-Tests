@@ -26,16 +26,10 @@ jobs:
           # macOS
           #
           # 1. using `.bash_profile` over `.profile` in CI-only (see GH-3852)
-          #
-          # 2. `brew upgrade` is required due to `brew install` failing
-          # when package is already installed but outdated
-          # This should probably be changed to something faster
-          # but it is too much effort right now
           - os: macos-11
             run: |-
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
-              brew upgrade
               brew install python@3.9
               echo 'export PATH="/usr/local/opt/python@3.9/bin:$PATH"' >> ~/.bash_profile
               source ~/.bash_profile
@@ -47,7 +41,6 @@ jobs:
             run: |-
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
-              brew upgrade
               brew install python@3.9
               echo 'export PATH="/usr/local/opt/python@3.9/bin:$PATH"' >> ~/.bash_profile
               source ~/.bash_profile
