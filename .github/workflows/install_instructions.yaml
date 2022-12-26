@@ -26,8 +26,11 @@ jobs:
           # macOS
           #
           # 1. using `.bash_profile` over `.profile` in CI-only (see GH-3852)
+          # 2. remove python@3 and python@3.11 executables before performing steps in GH Actions only
           - os: macos-11
             run: |-
+              rm /usr/local/bin/{2to3{,-3.10,-3.11},{idle3,pydoc3}{,.10,.11},python3{,.10,.11}{,-config}}
+
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
               brew install python@3.9
@@ -39,6 +42,8 @@ jobs:
             venv_method: "venv39"
           - os: macos-12
             run: |-
+              rm /usr/local/bin/{2to3{,-3.10,-3.11},{idle3,pydoc3}{,.10,.11},python3{,.10,.11}{,-config}}
+
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
               brew install python@3.9
