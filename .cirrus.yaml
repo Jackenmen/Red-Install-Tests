@@ -140,11 +140,7 @@ install_red_on_fedora: &INSTALL_RED_ON_FEDORA
   install_instructions_script: |-
     sudo dnf -y install python3.11 python3.11-devel git java-11-openjdk-headless @development-tools nano
   <<: *INSTALL_RED_VENV311
-
-
-macos_catalina_task:
-  macos_instance:
-    image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
+install_red_on_macos: &INSTALL_RED_ON_MACOS
   install_instructions_script: |-
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
@@ -157,6 +153,16 @@ macos_catalina_task:
     echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$profile"
     source "$profile"
   <<: *INSTALL_RED_VENV311
+
+
+macos_monterey_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
+  <<: *INSTALL_RED_ON_MACOS
+macos_ventura_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-ventura-xcode:latest
+  <<: *INSTALL_RED_ON_MACOS
 
 windows_task:
   compute_engine_instance:
