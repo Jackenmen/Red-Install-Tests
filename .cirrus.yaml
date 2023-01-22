@@ -244,13 +244,6 @@ fedora_36_task:
     sudo dnf -y install python39 git java-11-openjdk-headless @development-tools nano
   <<: *INSTALL_RED_VENV39
 
-opensuse_leap_15_3_task:
-  compute_engine_instance:
-    image_project: opensuse-cloud
-    image: opensuse-leap-15-3-v20220429-x86-64
-    cpu: 1
-    memory: 2G
-  <<: *INSTALL_RED_ON_OPENSUSE_LEAP_15
 opensuse_leap_15_4_task:
   compute_engine_instance:
     image_project: opensuse-cloud
