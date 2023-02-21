@@ -143,25 +143,28 @@ install_red_on_fedora: &INSTALL_RED_ON_FEDORA
 install_red_on_macos: &INSTALL_RED_ON_MACOS
   install_instructions_script: |-
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    brew_location="$([ -n "$HOMEBREW_PREFIX" ] && echo "$HOMEBREW_PREFIX" || ([ "$(/usr/bin/uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local))/bin/brew"
+    printf '\neval "$(%s shellenv)"\n' "$brew_location" >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
+    eval "$("$brew_location" shellenv)"
 
     brew install python@3.11
     brew install git
     brew tap homebrew/cask-versions
     brew install --cask temurin11
 
-    profile=$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))
-    echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$profile"
-    source "$profile"
+    echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
+    export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"
   <<: *INSTALL_RED_VENV311
 
 
 macos_monterey_task:
   macos_instance:
+    # this is using xcode image due to low free disk space on monterey vanilla image
     image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
   <<: *INSTALL_RED_ON_MACOS
 macos_ventura_task:
   macos_instance:
-    image: ghcr.io/cirruslabs/macos-ventura-xcode:latest
+    image: ghcr.io/cirruslabs/macos-ventura-vanilla:latest
   <<: *INSTALL_RED_ON_MACOS
 
 windows_task:
