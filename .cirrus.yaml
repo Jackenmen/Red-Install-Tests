@@ -336,6 +336,7 @@ raspberry_pi_os_10_armhf_task:
     # Python build with pyenv sometimes OOMs with 1GB of RAM
     memory: 1536M
   install_sudo_script: |-
+    apt update
     apt -y install sudo
   install_instructions_script: |-
     sudo apt update
@@ -349,6 +350,7 @@ raspberry_pi_os_11_armhf_task: &RASPBERRY_PI_OS_11
     cpu: 1
     memory: 1G
   install_sudo_script: |-
+    apt update
     apt -y install sudo
   install_instructions_script: |-
     sudo apt update
