@@ -266,18 +266,6 @@ centos_stream_9_task:
     memory: 2G
   <<: *INSTALL_RED_ON_RHEL9_DERIVATIVES
 
-debian_10_buster_task:
-  compute_engine_instance:
-    image_project: debian-cloud
-    image: family/debian-10
-    cpu: 1
-    memory: 2G
-  install_instructions_script: |-
-    sudo apt update
-    sudo apt -y install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libgdbm-dev uuid-dev python3-openssl git openjdk-11-jre-headless nano
-  env:
-    CXX: /usr/bin/g++
-  <<: *INSTALL_PYENV_AND_RED
 debian_11_bullseye_task:
   compute_engine_instance:
     image_project: debian-cloud
