@@ -147,14 +147,14 @@ install_red_on_macos: &INSTALL_RED_ON_MACOS
     printf '\neval "$(%s shellenv)"\n' "$brew_location" >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
     eval "$("$brew_location" shellenv)"
 
-    brew install python@3.11
+    brew install python@3.9
     brew install git
     brew tap homebrew/cask-versions
     brew install --cask temurin11
 
-    echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
-    export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"
-  <<: *INSTALL_RED_VENV311
+    echo 'export PATH="$(brew --prefix)/opt/python@3.9/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
+    export PATH="$(brew --prefix)/opt/python@3.9/bin:$PATH"
+  <<: *INSTALL_RED_VENV39
 
 
 macos_monterey_task:
