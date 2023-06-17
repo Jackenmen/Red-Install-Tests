@@ -351,13 +351,11 @@ rocky_linux_8_task:
     memory: 2G
   <<: *INSTALL_RED_ON_RHEL8_DERIVATIVES
 rocky_linux_9_task:
-  # FIXME: switch to compute_engine_instance once the image is available
-  container:
-    image: rockylinux:9
+  compute_engine_instance:
+    image_project: rocky-linux-cloud
+    image: family/rocky-linux-9
     cpu: 1
     memory: 2G
-  install_sudo_script: |-
-    dnf -y install sudo
   <<: *INSTALL_RED_ON_RHEL9_DERIVATIVES
 
 ubuntu_2004_focal_task:
