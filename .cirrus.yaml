@@ -51,9 +51,9 @@ install_pyenv_and_red310: &INSTALL_PYENV_AND_RED310
     echo 'eval "$(pyenv init -)"' >> "$rcfile"
     echo 'eval "$(pyenv virtualenv-init -)"' >> "$rcfile"
   install_python_with_pyenv_script: |-
-    CONFIGURE_OPTS=--enable-optimizations pyenv install 3.10.9 -v
+    CONFIGURE_OPTS=--enable-optimizations pyenv install 3.10.12 -v
 
-    pyenv global 3.10.9
+    pyenv global 3.10.12
   install_red_script: |-
     pyenv virtualenv redbot
 
@@ -77,9 +77,9 @@ install_pyenv_and_red39: &INSTALL_PYENV_AND_RED39
     echo 'eval "$(pyenv init -)"' >> "$rcfile"
     echo 'eval "$(pyenv virtualenv-init -)"' >> "$rcfile"
   install_python_with_pyenv_script: |-
-    CONFIGURE_OPTS=--enable-optimizations pyenv install 3.9.16 -v
+    CONFIGURE_OPTS=--enable-optimizations pyenv install 3.9.17 -v
 
-    pyenv global 3.9.16
+    pyenv global 3.9.17
   install_red_script: |-
     pyenv virtualenv redbot
 
