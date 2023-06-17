@@ -354,21 +354,6 @@ rocky_linux_9_task:
     dnf -y install sudo
   <<: *INSTALL_RED_ON_RHEL9_DERIVATIVES
 
-ubuntu_1804_bionic_task:
-  compute_engine_instance:
-    image_project: ubuntu-os-cloud
-    image: family/ubuntu-1804-lts
-    cpu: 1
-    memory: 2G
-  install_instructions_script: |-
-    sudo apt update
-    sudo apt -y install software-properties-common
-    sudo add-apt-repository -y ppa:git-core/ppa
-
-    sudo add-apt-repository -y ppa:deadsnakes/ppa
-
-    sudo apt -y install python3.11 python3.11-dev python3.11-venv git openjdk-11-jre-headless build-essential nano
-  <<: *INSTALL_RED_VENV311
 ubuntu_2004_focal_task:
   compute_engine_instance:
     image_project: ubuntu-os-cloud
