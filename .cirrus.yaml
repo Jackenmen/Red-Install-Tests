@@ -210,6 +210,8 @@ centos_7_task:
     image: family/centos-7
     cpu: 1
     memory: 2G
+  env:
+    HOME: /root
   install_instructions_script: |-
     sudo yum -y groupinstall development
     sudo yum -y install zlib-devel bzip2 bzip2-devel readline-devel sqlite sqlite-devel openssl-devel xz xz-devel tk-devel libffi-devel findutils java-11-openjdk-headless nano
