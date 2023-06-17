@@ -38,7 +38,7 @@ jobs:
               brew install python@3.11
               brew install git
               brew tap homebrew/cask-versions
-              brew install --cask temurin11
+              brew install --cask temurin17
 
               echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
               export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"
@@ -55,7 +55,7 @@ jobs:
               brew install python@3.11
               brew install git
               brew tap homebrew/cask-versions
-              brew install --cask temurin11
+              brew install --cask temurin17
 
               echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
               export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"
@@ -91,6 +91,8 @@ jobs:
           python -m pip install -U pip setuptools wheel
           python -m pip install -U "$RED_PACKAGE_NAME"
 
+          # we skip checking Java version because GitHub Actions environment
+          # will take precedence over whatever we do here
       - name: Run tests inside venv on Python 3.11.
         if: >-
           matrix.venv_method == 'venv311'
