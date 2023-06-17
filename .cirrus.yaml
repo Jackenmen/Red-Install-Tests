@@ -258,7 +258,6 @@ fedora_37_task:
     cpu: 1
     memory: 2G
   <<: *INSTALL_RED_ON_FEDORA
-
 fedora_38_task:
   compute_engine_instance:
     image_project: fedora-cloud
