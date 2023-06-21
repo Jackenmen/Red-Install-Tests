@@ -323,24 +323,9 @@ oracle_linux_9_task:
     dnf -y install sudo
   <<: *INSTALL_RED_ON_RHEL9_DERIVATIVES
 
-raspberry_pi_os_10_armhf_task:
+raspberry_pi_os_11_aarch64_task:
   arm_container:
-    image: lpenz/rpios-buster-armhf
-    cpu: 1
-    # Python build with pyenv sometimes OOMs with 1GB of RAM
-    memory: 1536M
-  install_sudo_script: |-
-    apt update
-    apt -y install sudo
-  install_instructions_script: |-
-    sudo apt update
-    sudo apt -y install cmake make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libgdbm-dev uuid-dev python3-openssl git openjdk-17-jre-headless nano
-  env:
-    CXX: /usr/bin/g++
-  <<: *INSTALL_PYENV_AND_RED310
-raspberry_pi_os_11_armhf_task: &RASPBERRY_PI_OS_11
-  arm_container:
-    image: lpenz/rpios-bullseye-armhf
+    image: lpenz/rpios-bullseye-arm64
     cpu: 1
     memory: 1G
   install_sudo_script: |-
@@ -350,12 +335,6 @@ raspberry_pi_os_11_armhf_task: &RASPBERRY_PI_OS_11
     sudo apt update
     sudo apt -y install python3 python3-dev python3-venv git openjdk-17-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV39
-raspberry_pi_os_11_aarch64_task:
-  <<: *RASPBERRY_PI_OS_11
-  arm_container:
-    image: lpenz/rpios-bullseye-arm64
-    cpu: 1
-    memory: 1G
 
 rocky_linux_8_task:
   compute_engine_instance:
