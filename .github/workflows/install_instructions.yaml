@@ -28,7 +28,7 @@ jobs:
           # 1. remove python@3 and python@3.11 executables before performing steps in GH Actions only
           - os: macos-11
             run: |-
-              rm /usr/local/bin/{2to3{,-3.10,-3.11},{idle3,pydoc3}{,.10,.11},python3{,.10,.11}{,-config}}
+              rm -f /usr/local/bin/{2to3{,-3.*},{idle3,pydoc3}{,.*},python3{,.*}{,-config}}
 
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
               brew_location="$([ -n "$HOMEBREW_PREFIX" ] && echo "$HOMEBREW_PREFIX" || ([ "$(/usr/bin/uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local))/bin/brew"
@@ -45,7 +45,7 @@ jobs:
             venv_method: "venv311"
           - os: macos-12
             run: |-
-              rm /usr/local/bin/{2to3{,-3.10,-3.11},{idle3,pydoc3}{,.10,.11},python3{,.10,.11}{,-config}}
+              rm -f /usr/local/bin/{2to3{,-3.*},{idle3,pydoc3}{,.*},python3{,.*}{,-config}}
 
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
               brew_location="$([ -n "$HOMEBREW_PREFIX" ] && echo "$HOMEBREW_PREFIX" || ([ "$(/usr/bin/uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local))/bin/brew"
@@ -62,7 +62,7 @@ jobs:
             venv_method: "venv311"
           - os: macos-13
             run: |-
-              rm /usr/local/bin/{2to3{,-3.10,-3.11},{idle3,pydoc3}{,.10,.11},python3{,.10,.11}{,-config}}
+              rm -f /usr/local/bin/{2to3{,-3.*},{idle3,pydoc3}{,.*},python3{,.*}{,-config}}
 
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
               brew_location="$([ -n "$HOMEBREW_PREFIX" ] && echo "$HOMEBREW_PREFIX" || ([ "$(/usr/bin/uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local))/bin/brew"
