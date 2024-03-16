@@ -140,6 +140,10 @@ macos_ventura_task:
   macos_instance:
     image: ghcr.io/cirruslabs/macos-ventura-vanilla:latest
   <<: *INSTALL_RED_ON_MACOS
+macos_sonoma_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-sonoma-vanilla:latest
+  <<: *INSTALL_RED_ON_MACOS
 
 windows_task:
   compute_engine_instance:
