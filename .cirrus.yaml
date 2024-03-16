@@ -200,12 +200,12 @@ archlinux_task:
   install_instructions_script: |-
     sudo pacman --noconfirm -Syu git jre17-openjdk-headless base-devel nano
 
-    sudo -u builduser git clone https://aur.archlinux.org/python39.git /tmp/python39
-    cd /tmp/python39
+    sudo -u builduser git clone https://aur.archlinux.org/python310.git /tmp/python310
+    cd /tmp/python310
     sudo -u builduser makepkg --noconfirm -sicL
     cd -
-    rm -rf /tmp/python39
-  <<: *INSTALL_RED_VENV39
+    rm -rf /tmp/python310
+  <<: *INSTALL_RED_VENV310
 
 centos_7_task:
   compute_engine_instance:
