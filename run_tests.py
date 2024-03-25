@@ -23,9 +23,14 @@ async def main() -> None:
 
     package_name = os.environ["RED_PACKAGE_NAME"]
     red_install_tests_repo = os.getcwd()
+
+    with subprocess.Popen(
+        (sys.executable, "generate_imports.py"), stdout=subprocess.PIPE
+    ) as import_generator:
+        subprocess.check_call((sys.executable, "-"), stdin=import_generator.stdout)
+
     os.mkdir("Red-DiscordBot")
     os.chdir("Red-DiscordBot")
-
     if package_name == "Red-DiscordBot":
         url = (
             f"https://files.pythonhosted.org/packages/source/R/Red-DiscordBot/"
