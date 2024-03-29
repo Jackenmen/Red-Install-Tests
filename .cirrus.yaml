@@ -189,6 +189,17 @@ almalinux_9_task:
     memory: 2G
   <<: *INSTALL_RED_ON_RHEL9_DERIVATIVES
 
+amazon_linux_2023_task:
+  container:
+    image: docker.io/amazonlinux:2023
+    cpu: 1
+    memory: 2G
+  install_sudo_script: |-
+    dnf -y install sudo
+  install_instructions_script: |-
+    sudo dnf -y install python3.11 python3.11-devel git java-17-amazon-corretto-headless @development nano
+  <<: *INSTALL_RED_VENV311
+
 archlinux_task:
   container:
     image: archlinux:latest
