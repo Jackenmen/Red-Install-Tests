@@ -16,7 +16,7 @@ choco upgrade git --params "/GitOnlyOnPath /WindowsTerminal" -y
 choco upgrade visualstudio2022-workload-vctools -y
 choco upgrade python311 -y
 
-choco upgrade temurin17 -y
+choco upgrade temurin21 -y
 "@
 
 ForEach ($command in $($commands -split '\r?\n'))

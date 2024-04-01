@@ -13,7 +13,7 @@ _RE_JAVA_VERSION_LINE_223 = re.compile(
 
 
 def main() -> int:
-    expected_major_version = int(os.getenv("EXPECTED_JAVA_VERSION", "17"))
+    expected_major_version = int(os.getenv("EXPECTED_JAVA_VERSION", "21"))
     process = subprocess.run(("java", "-version"), stderr=subprocess.PIPE, check=True)
     version_info = process.stderr.decode("utf-8")
     lines = version_info.splitlines()
