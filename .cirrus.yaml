@@ -393,7 +393,30 @@ ubuntu_2204_jammy_task:
     sudo apt update
     sudo apt -y install python3.10 python3.10-dev python3.10-venv git openjdk-17-jre-headless build-essential nano
   <<: *INSTALL_RED_VENV310
-ubuntu_devel_task:
+ubuntu_2310_mantic_task:
+  compute_engine_instance:
+    image_project: ubuntu-os-cloud
+    image: family/ubuntu-2310-amd64
+    cpu: 1
+    memory: 2G
+  install_instructions_script: |-
+    sudo apt update
+    sudo apt -y install python3.11 python3.11-dev python3.11-venv git openjdk-17-jre-headless build-essential nano
+  <<: *INSTALL_RED_VENV311
+ubuntu_2404_noble_task:
+  compute_engine_instance:
+    image_project: ubuntu-os-cloud
+    image: family/ubuntu-2404-lts-amd64
+    cpu: 1
+    memory: 2G
+  install_instructions_script: |-
+    sudo apt update
+    sudo apt -y install software-properties-common
+    sudo add-apt-repository -y ppa:deadsnakes/ppa
+
+    sudo apt -y install python3.11 python3.11-dev python3.11-venv git openjdk-17-jre-headless build-essential nano
+  <<: *INSTALL_RED_VENV311
+ubuntu_devel_task_disabled:
   container:
     image: ubuntu:devel
     cpu: 1
