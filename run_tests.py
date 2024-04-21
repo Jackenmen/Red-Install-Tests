@@ -34,7 +34,7 @@ async def main() -> None:
     if package_name == "Red-DiscordBot":
         url = (
             f"https://files.pythonhosted.org/packages/source/R/Red-DiscordBot/"
-            f"Red-DiscordBot-{redbot.__version__}.tar.gz"
+            f"red_discordbot-{redbot.__version__}.tar.gz"
         )
     else:
         url = package_name.rsplit("#", maxsplit=1)[0]
