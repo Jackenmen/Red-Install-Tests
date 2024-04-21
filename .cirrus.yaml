@@ -296,6 +296,14 @@ fedora_39_task:
     cpu: 1
     memory: 2G
   <<: *INSTALL_RED_ON_FEDORA
+fedora_40_task:
+  container:
+    image: fedora:40
+    cpu: 1
+    memory: 2G
+  install_sudo_script: |-
+    dnf -y install sudo
+  <<: *INSTALL_RED_ON_FEDORA
 
 opensuse_leap_15_5_task:
   compute_engine_instance:
