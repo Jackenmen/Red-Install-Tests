@@ -123,8 +123,7 @@ install_red_on_macos: &INSTALL_RED_ON_MACOS
 
     brew install python@3.11
     brew install git
-    brew tap homebrew/cask-versions
-    brew install --cask temurin17
+    brew install temurin@17
 
     echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
     export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"
