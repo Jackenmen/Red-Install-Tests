@@ -72,9 +72,9 @@ def _check_for_intermittent_errors(ctx):
         print("Task is already an automatic re-run, let's not retry...")
         return False
     for notification in ctx.payload.data.task.notifications:
-        msg = notification["message"]
+        msg = notification.message
         if (
-            notification["level"] == "ERROR"
+            notification.level == "ERROR"
             or msg.startswith("Persistent worker failed to start the task")
         ):
             return True
