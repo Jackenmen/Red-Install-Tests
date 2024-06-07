@@ -256,7 +256,12 @@ centos_stream_9_task:
     image: family/centos-stream-9
     cpu: 1
     memory: 2G
-  <<: *INSTALL_RED_ON_RHEL9_DERIVATIVES
+  env:
+    HOME: /root
+    EXPECTED_JAVA_VERSION: 17
+  install_instructions_script: |-
+    sudo dnf -y install python3.11 python3.11-devel git java-17-openjdk-headless @development nano
+  <<: *INSTALL_RED_VENV311
 
 debian_11_bullseye_task:
   compute_engine_instance:
