@@ -217,6 +217,13 @@ fedora_40_task:
 opensuse_leap_15_5_task:
   compute_engine_instance:
     image_project: opensuse-cloud
+    image: opensuse-leap-15-5-v20240516-x86-64
+    cpu: 1
+    memory: 2G
+  <<: *INSTALL_RED_ON_OPENSUSE_LEAP_15
+opensuse_leap_15_6_task:
+  compute_engine_instance:
+    image_project: opensuse-cloud
     image: family/opensuse-leap
     cpu: 1
     memory: 2G
