@@ -16,6 +16,7 @@ env:
       )
       || 'Red-DiscordBot[postgres]'
     }}
+  PIP_ONLY_BINARY: ':all:'
 
 jobs:
   install:

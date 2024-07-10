@@ -1,5 +1,6 @@
 env:
   CIRRUS_SHELL: bash -ileo pipefail
+  PIP_ONLY_BINARY: ':all:'
 
 install_red_venv39: &INSTALL_RED_VENV39
   install_red_script: |-
