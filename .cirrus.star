@@ -39,16 +39,16 @@ def _on_build_finish_task():
 
 
 def main(ctx):
-    package_name = "https://github.com/Cog-Creators/Red-DiscordBot/tarball/"
+    package_spec = "Red-DiscordBot[postgres] @ https://github.com/Cog-Creators/Red-DiscordBot/tarball/"
     if env["CIRRUS_BRANCH"] == "dev":
-        package_name += "V3/develop#egg=Red-DiscordBot"
+        package_spec += "V3/develop"
     elif env["CIRRUS_BRANCH"].startswith("pull/"):
-        package_name += "refs/{0}/merge#egg=Red-DiscordBot".format(env["CIRRUS_BRANCH"])
+        package_spec += "refs/{0}/merge".format(env["CIRRUS_BRANCH"])
     else:
-        package_name = "Red-DiscordBot"
+        package_spec = "Red-DiscordBot[postgres]"
 
     return [
-        ("env", {"RED_PACKAGE_NAME": package_name}),
+        ("env", {"RED_PACKAGE_SPEC": package_spec}),
         _on_build_finish_task(),
     ]
 

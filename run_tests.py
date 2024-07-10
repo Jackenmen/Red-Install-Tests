@@ -13,6 +13,8 @@ import redbot
 
 TEST_CODE_0 = "import spam; exit(spam.system('python -c \"exit(0)\"') != 0)"
 TEST_CODE_1 = "import spam; exit(spam.system('python -c \"exit(1)\"') == 0)"
+PACKAGE_NAME = "Red-DiscordBot"
+PACKAGE_NAME_WITH_EXTRAS = f"{PACKAGE_NAME}[postgres]"
 
 
 async def main() -> None:
@@ -21,7 +23,7 @@ async def main() -> None:
         print("Running tests skipped. Reason:", skip_tests)
         raise SystemExit(0)
 
-    package_name = os.environ["RED_PACKAGE_NAME"]
+    package_spec = os.environ["RED_PACKAGE_SPEC"]
     red_install_tests_repo = os.getcwd()
 
     with subprocess.Popen(
@@ -29,15 +31,15 @@ async def main() -> None:
     ) as import_generator:
         subprocess.check_call((sys.executable, "-"), stdin=import_generator.stdout)
 
-    os.mkdir("Red-DiscordBot")
-    os.chdir("Red-DiscordBot")
-    if package_name == "Red-DiscordBot":
+    os.mkdir(PACKAGE_NAME)
+    os.chdir(PACKAGE_NAME)
+    if package_spec == PACKAGE_NAME_WITH_EXTRAS:
         url = (
             f"https://files.pythonhosted.org/packages/source/R/Red-DiscordBot/"
             f"red_discordbot-{redbot.__version__}.tar.gz"
         )
     else:
-        url = package_name.rsplit("#", maxsplit=1)[0]
+        url = package_spec[len(f"{PACKAGE_NAME_WITH_EXTRAS} @ "):]
 
     if sys.platform == "win32":
         subprocess.run(("curl", "--head", url), check=True)
@@ -66,8 +68,11 @@ async def main() -> None:
         for line in lines:
             fp.write(line)
 
+    package_test_spec = package_spec.replace(
+        PACKAGE_NAME_WITH_EXTRAS, f"{PACKAGE_NAME}[test]"
+    )
     for args in (
-        (sys.executable, "-m", "pip", "install", "-U", f"{package_name}[test]"),
+        (sys.executable, "-m", "pip", "install", "-U", package_test_spec),
         (sys.executable, "-m", "pytest"),
     ):
         subprocess.run(args, check=True)

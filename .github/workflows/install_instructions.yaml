@@ -7,14 +7,14 @@ on:
     - cron: '5 16 * * *'
 
 env:
-  RED_PACKAGE_NAME: |-
+  RED_PACKAGE_SPEC: |-
     ${{
-      github.ref_name == 'dev' && 'https://github.com/Cog-Creators/Red-DiscordBot/tarball/V3/develop#egg=Red-DiscordBot'
+      github.ref_name == 'dev' && 'Red-DiscordBot[postgres] @ https://github.com/Cog-Creators/Red-DiscordBot/tarball/V3/develop'
       || startsWith(github.ref_name, 'pull/') && format(
-        'https://github.com/Cog-Creators/Red-DiscordBot/tarball/refs/{0}/merge#egg=Red-DiscordBot',
+        'Red-DiscordBot[postgres] @ https://github.com/Cog-Creators/Red-DiscordBot/tarball/refs/{0}/merge',
         github.ref_name
       )
-      || 'Red-DiscordBot'
+      || 'Red-DiscordBot[postgres]'
     }}
 
 jobs:
@@ -87,7 +87,7 @@ jobs:
           source ~/redenv/bin/activate
 
           python -m pip install -U pip setuptools wheel
-          python -m pip install -U "$RED_PACKAGE_NAME"
+          python -m pip install -U "$RED_PACKAGE_SPEC"
 
           # we skip checking Java version because GitHub Actions environment
           # will take precedence over whatever we do here
