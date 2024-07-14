@@ -263,6 +263,10 @@ raspberry_pi_os_11_aarch64_task:
     image: lpenz/rpios-bullseye-arm64
     cpu: 1
     memory: 1G
+  env:
+    # apsw wasn't building ARM wheels for older Python versions, new release expected September:
+    # https://github.com/rogerbinns/apsw/pull/530#issuecomment-2225715320
+    PIP_NO_BINARY: apsw
   install_sudo_script: |-
     apt update
     apt -y install sudo
