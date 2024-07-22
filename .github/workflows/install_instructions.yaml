@@ -23,64 +23,46 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # macOS
-          #
-          # 1. remove python@3 and python@3.* executables before performing steps in GH Actions only
-          - os: macos-12
-            run: |-
-              rm -f /usr/local/bin/{2to3{,-3.*},{idle3,pydoc3}{,.*},python3{,.*}{,-config}}
+        os:
+          # x86_64
+          - macos-12
+          - macos-13
+          # ARM
+          - macos-14
 
-              /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-              brew_location="$([ -n "$HOMEBREW_PREFIX" ] && echo "$HOMEBREW_PREFIX" || ([ "$(/usr/bin/uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local))/bin/brew"
-              printf '\neval "$(%s shellenv)"\n' "$brew_location" >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
-              eval "$("$brew_location" shellenv)"
-
-              brew install python@3.11
-              brew install git
-              brew install temurin@17
-
-              echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
-              export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"
-            venv_method: "venv311"
-          - os: macos-13
-            run: |-
-              rm -f /usr/local/bin/{2to3{,-3.*},{idle3,pydoc3}{,.*},python3{,.*}{,-config}}
-
-              /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-              brew_location="$([ -n "$HOMEBREW_PREFIX" ] && echo "$HOMEBREW_PREFIX" || ([ "$(/usr/bin/uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local))/bin/brew"
-              printf '\neval "$(%s shellenv)"\n' "$brew_location" >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
-              eval "$("$brew_location" shellenv)"
-
-              brew install python@3.11
-              brew install git
-              brew install temurin@17
-
-              echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
-              export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"
-            venv_method: "venv311"
-
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
-    container: ${{ matrix.container }}
-    env:
-      DEBIAN_FRONTEND: noninteractive
+    runs-on: ${{ matrix.os }}
 
     steps:
       # Clone Red-Install-Tests repository
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Installing requirements
+      # Before performing steps in GH Actions following steps are performed first:
+      # 1. Remove python@3 and python@3.* executables
+      # 2. Remove JAVA_HOME and symlinks used by /usr/libexec/java_home to find Java
+      - name: Perform Actions runner system pre-cleanup
+        run: |-
+          rm -f /usr/local/bin/{2to3{,-3.*},{idle3,pydoc3}{,.*},python3{,.*}{,-config}}
+          sed -i '' -E 's/^(export JAVA_HOME[^=]*=).*/\1/' ~/.bashrc
+          sudo rm -f /Library/Java/JavaVirtualMachines/Temurin-Hotspot-*.jdk
+
+      # Installing requirements on macOS
       - name: Run install instructions (Linux/Mac)
-        id: install_linux
-        run: ${{ matrix.run }}
-        if: >-
-          runner.os != 'Windows'
+        run: |-
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          brew_location="$([ -n "$HOMEBREW_PREFIX" ] && echo "$HOMEBREW_PREFIX" || ([ "$(/usr/bin/uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local))/bin/brew"
+          printf '\neval "$(%s shellenv)"\n' "$brew_location" >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
+          eval "$("$brew_location" shellenv)"
+
+          brew install python@3.11
+          brew install git
+          brew install temurin@17
+
+          echo 'export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"' >> "$([ -n "$ZSH_VERSION" ] && echo ~/.zprofile || ([ -f ~/.bash_profile ] && echo ~/.bash_profile || echo ~/.profile))"
+          export PATH="$(brew --prefix)/opt/python@3.11/bin:$PATH"
         shell: bash -leo pipefail {0}
 
       # Making a virtual environment and installing Red
-      - name: Install Red inside venv on Python 3.11 (Linux/Mac)
-        if: >-
-          matrix.venv_method == 'venv311'
+      - name: Install Red inside venv on Python 3.11
         shell: bash -leo pipefail {0}
         run: |-
           python3.11 -m venv ~/redenv
@@ -90,11 +72,8 @@ jobs:
           python -m pip install -U pip setuptools wheel
           python -m pip install -U "$RED_PACKAGE_SPEC"
 
-          # we skip checking Java version because GitHub Actions environment
-          # will take precedence over whatever we do here
+          ./check_java_version.py
       - name: Run tests inside venv on Python 3.11.
-        if: >-
-          matrix.venv_method == 'venv311'
         shell: bash -leo pipefail {0}
         run: |-
           source ~/redenv/bin/activate
