@@ -25,10 +25,10 @@ jobs:
       matrix:
         os:
           # x86_64
-          - macos-12
           - macos-13
           # ARM
           - macos-14
+          - macos-15
 
     runs-on: ${{ matrix.os }}
 
