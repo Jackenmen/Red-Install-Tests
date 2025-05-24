@@ -41,7 +41,7 @@ jobs:
       # 2. Remove JAVA_HOME and symlinks used by /usr/libexec/java_home to find Java
       - name: Perform Actions runner system pre-cleanup
         run: |-
-          rm -f /usr/local/bin/{2to3{,-3.*},{idle3,pydoc3}{,.*},python3{,.*}{,-config}}
+          rm -f /usr/local/bin/{2to3{,-3.*},{idle3,pip3,pydoc3}{,.*},python3{,.*}{,-config}}
           sed -i '' -E 's/^(export JAVA_HOME[^=]*=).*/\1/' ~/.bashrc
           sudo rm -f /Library/Java/JavaVirtualMachines/Temurin-Hotspot-*.jdk
 
