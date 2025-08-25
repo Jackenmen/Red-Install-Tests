@@ -260,16 +260,6 @@ rocky_linux_9_task:
     memory: 2G
   <<: *INSTALL_RED_ON_RHEL9_DERIVATIVES
 
-ubuntu_2004_focal_task:
-  compute_engine_instance:
-    image_project: ubuntu-os-cloud
-    image: family/ubuntu-2004-lts
-    cpu: 1
-    memory: 2G
-  install_instructions_script: |-
-    sudo apt update
-    sudo apt -y install python3.9 python3.9-dev python3.9-venv git openjdk-17-jre-headless build-essential nano
-  <<: *INSTALL_RED_VENV39
 ubuntu_2204_jammy_task:
   compute_engine_instance:
     image_project: ubuntu-os-cloud
