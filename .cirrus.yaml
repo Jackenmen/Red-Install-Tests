@@ -171,6 +171,14 @@ fedora_43_task:
   install_sudo_script: |-
     dnf -y install sudo
   <<: *INSTALL_RED_ON_FEDORA
+fedora_44_task:
+  container:
+    image: fedora:44
+    cpu: 1
+    memory: 2G
+  install_sudo_script: |-
+    dnf -y install sudo
+  <<: *INSTALL_RED_ON_FEDORA
 
 opensuse_leap_15_6_task_disabled:
   compute_engine_instance:
