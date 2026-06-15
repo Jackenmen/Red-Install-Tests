@@ -159,8 +159,6 @@ source "qemu" "tests" {
   cpu_model = local.is_x86_64 ? "host" : (local.machine_type == "raspi3b" ? "" : "max")
   efi_firmware_code = var.efi_firmware_code
   efi_firmware_vars = var.efi_firmware_vars
-  vtpm = local.machine_type != "raspi3b"
-  tpm_device_type = local.is_x86_64 ? "tpm-crb" : "tpm-tis-device"
 
   # SSH timeout values:
   # - for Windows, it needs to be larger because we have to install the system from scratch
