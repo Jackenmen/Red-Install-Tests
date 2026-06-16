@@ -69,6 +69,16 @@ variable "architecture" {
   }
 }
 
+variable "efi_firmware_code" {
+  type = string
+  default = ""
+}
+
+variable "efi_firmware_vars" {
+  type = string
+  default = ""
+}
+
 variable "extra_qemu_args" {
   type = list(tuple([string, string]))
   default = []
@@ -122,6 +132,14 @@ source "qemu" "tests" {
   cd_label = "cidata"
   ssh_username = "packer"
 
+  # Keystrokes to send over VNC, only needed on Windows in UEFI mode
+  # to get through the "Press any key to boot from CD or DVD" prompt.
+  boot_command = var.os == "windows" ? [
+    "<spacebar><spacebar><spacebar><spacebar><spacebar><spacebar>",
+  ] : []
+  boot_wait = "-1s"
+  boot_key_interval = "500ms"
+
   # Use the correct binary for the tested system
   qemu_binary = "qemu-system-${var.architecture}"
 
@@ -139,6 +157,10 @@ source "qemu" "tests" {
   # Some OSes may require x86-64-v3 extensions or ARMv8.2-A (rather than ARMv8.0)
   # so just go with host / max to get the fullest feature set we can.
   cpu_model = local.is_x86_64 ? "host" : (local.machine_type == "raspi3b" ? "" : "max")
+  efi_firmware_code = var.efi_firmware_code
+  efi_firmware_vars = var.efi_firmware_vars
+  vtpm = local.machine_type != "raspi3b"
+  tpm_device_type = local.is_x86_64 ? "tpm-crb" : "tpm-tis-device"
 
   # SSH timeout values:
   # - for Windows, it needs to be larger because we have to install the system from scratch
