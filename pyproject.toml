@@ -116,11 +116,17 @@ ignore = [
     "S202",
     # the idea of checking untrusted input is not a bad one but this is prone to false positives
     "S603",
+    # checking for absolute paths is way too strict for what we're doing
+    "S607",
     # `contextlib.suppress()` is slower than `try-except-pass`
     "SIM105",
 ]
 preview = true
 explicit-preview-rules = true
+
+[tool.ruff.per-file-target-version]
+# Override the project-wide Python version for a developer scripts directory:
+"src/red_install_tests/resources/tests/*.py" = "py38"
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
