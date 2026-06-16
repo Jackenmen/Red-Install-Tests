@@ -164,6 +164,6 @@ source "qemu" "tests" {
   # - for Windows, it needs to be larger because we have to install the system from scratch
   # - for Linux ARM, it needs to be larger because we (usually) have to emulate it and boot is slower
   # - for Linux x86_64, boot takes only around a minute
-  ssh_timeout = (var.os == "windows" ? "15m" : (!local.is_x86_64 ? "10m" : "5m"))
+  ssh_timeout = (var.os == "windows" ? "25m" : (!local.is_x86_64 ? "20m" : "5m"))
   qemuargs = local.qemu_args
 }
