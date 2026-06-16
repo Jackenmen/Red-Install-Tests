@@ -12,6 +12,53 @@ This repo also allows for requesting builds for pending PRs on demand.
 - [QEMU](https://www.qemu.org/download/)
 - On Linux, you might need to manually install [xorriso](https://www.gnu.org/software/xorriso/)
 
+## Supported platforms
+
+<table>
+    <thead>
+        <tr>
+            <th rowspan=2>Host OS</th>
+            <th colspan=4>Guest OS</th>
+        </tr>
+        <tr>
+            <th scope="col">Linux x86_64</th>
+            <th scope="col">Linux aarch64</th>
+            <th scope="col">macOS aarch64</th>
+            <th scope="col">Windows x86_64</th>
+        </tr>
+    </thead>
+    <tbody align="center">
+        <tr>
+            <th scope="row">Linux x86_64</th>
+            <td>✅<br><b>recommended</b> host</td>
+            <td>⚠️<br>emulation-only</td>
+            <td>❌</td>
+            <td>✅<br><b>recommended</b> host</td>
+        </tr>
+        <tr>
+            <th scope="row">Linux aarch64</th>
+            <td>⚠️<br>emulation-only</td>
+            <td>✅<br><b>recommended</b> host</td>
+            <td>❌</td>
+            <td>⚠️<br>emulation-only</td>
+        </tr>
+        <tr>
+            <th scope="row">macOS aarch64</th>
+            <td>⚠️<br>emulation-only</td>
+            <td>✅<br>accelerated</td>
+            <td>✅<br><b>recommended</b> host</td>
+            <td>⚠️<br>emulation-only</td>
+        </tr>
+        <tr>
+            <th scope="row">Windows x86_64</th>
+            <td>✅<br>accelerated</td>
+            <td>⚠️<br>emulation-only</td>
+            <td>❌</td>
+            <td>✅<br>accelerated</td>
+        </tr>
+    </tbody>
+</table>
+
 ## Running locally
 
 > [!NOTE]
