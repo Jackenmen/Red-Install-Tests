@@ -59,6 +59,47 @@ This repo also allows for requesting builds for pending PRs on demand.
     </tbody>
 </table>
 
+## Terminology
+
+-   **run** - a build configuration with one or more **jobs**,
+    a **run directory** consists of a run configuration file (`run_config.json`),
+    a Red repository directory, and an OS matrix (`os_matrix.json`).
+    When the run consists of only one job, it may be used as the **job directory**.
+-   **job** - a single OS build configuration corresponding to one [Packer](https://developer.hashicorp.com/packer) build,
+    a **job directory** consists of files from the **run directory** and a job configuration file (`job_config.json`)
+-   **build** - a [Packer](https://developer.hashicorp.com/packer) build for a **job**,
+    a **build directory** consists of all files needed for the Packer build such as `*.pkr.hcl` template files,
+    `*.pkrvars.json` variable files, or the OS base image file.
+
+```mermaid
+graph TD;
+    run["`
+        **Run**
+        Repo owner: Cog-Creators
+        Repo name: Red-DiscordBot
+        Ref: PR #6785
+    `"];
+    run-->os_matrix["`**OS matrix**`"];
+
+    os_matrix-->debian_job["`**Job** 'debian-12'`"];
+    debian_job-->debian_build["`
+        **Packer build**
+        Builder: QEMU
+    `"];
+
+    os_matrix-->macos_job["`**Job** 'macos-26'`"];
+    macos_job-->macos_build["`
+        **Packer build**
+        Builder: Tart
+    `"];
+
+    os_matrix-->windows_job["`**Job** 'windows-11'`"];
+    windows_job-->windows_build["`
+        **Packer build**
+        Builder: QEMU
+    `"];
+```
+
 ## Running locally
 
 > [!NOTE]
