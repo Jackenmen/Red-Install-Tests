@@ -20,6 +20,8 @@ classifiers = [
 dependencies = [
     "lxml",
     "niquests[http3,speedups]",
+    "platformdirs",
+    "rich",
     "typing-extensions",
 ]
 
