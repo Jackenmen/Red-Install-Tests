@@ -53,6 +53,28 @@ download-builder-requirements = "red-install-tests download-builder-requirements
 prepare-build-dir = "red-install-tests prepare-build-dir --job-dir {root}{/}os-build-run {args}"
 build = "red-install-tests build --job-dir {root}{/}os-build-run {args}"
 build-all = "red-install-tests build-all --run-dir {root}{/}os-build-run {args}"
+# combination of the above
+generate-bare-run = [
+    "configure-run",
+    "red-install-tests download-red-repo --run-dir {root}{/}os-build-run",
+    "red-install-tests generate-os-matrix --run-dir {root}{/}os-build-run",
+]
+generate-jobs = [
+    'create-job {args:"*"}',
+    "red-install-tests download-builder-requirements --deps-dir {root}{/}deps",
+    "red-install-tests prepare-build-dir --run-dir {root}{/}os-build-run --all",
+]
+generate-job = [
+    'create-job {args:"*"}',
+    "red-install-tests download-builder-requirements --deps-dir {root}{/}deps",
+    "red-install-tests prepare-build-dir --job-dir {root}{/}os-build-run",
+]
+generate-run = [
+    "generate-bare-run",
+    'create-job "*"',
+    "red-install-tests download-builder-requirements --deps-dir {root}{/}deps",
+    "red-install-tests prepare-build-dir --run-dir {root}{/}os-build-run --all",
+]
 
 [tool.hatch.envs.hatch-check-types]
 dependencies = ["ty", "Red-DiscordBot", "setuptools", "types-lxml"]

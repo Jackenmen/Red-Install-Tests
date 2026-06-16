@@ -24,6 +24,87 @@ This repo also allows for requesting builds for pending PRs on demand.
 > When using project's Hatch scripts (e.g. `hatch run configure-run` instead of
 > `hatch run red-install-tests configure-run`), the **run directory** will be
 > the `os-build-run` subdirectory of the project root rather than of the current directory.
+>
+> The shortcut scripts `generate-bare-run`, `generate-job`, `generate-jobs`, and `generate-run`
+> do not allow customizing directories.
+
+### Simple usage
+
+#### Run builds for all images
+
+1.  Generate the **run**, **job**, and **build** directories with the `hatch run generate-run` script:
+    ```console
+    hatch run generate-run
+    ```
+    By default, the **run** is configured to test the stable version of Red. \
+    You can change that with the `--pr`, `--branch`, or `--version` options.
+    You can also choose to test Red from a fork using the `--repo` option.
+    ```console
+    hatch run generate-run --pr 6785
+    hatch run generate-run --version 3.5.25
+    hatch run generate-run --repo Jackenmen/Red-DiscordBot --branch add_os_image_locations
+    ```
+1.  Run all builds with the `red-install-tests build-all` command:
+    ```console
+    hatch run build-all
+    ```
+    By default, this will run only a single build at a time. You can run builds in parallel instead
+    by specifying the `-j` option with the max number of builds to run concurrently:
+    ```console
+    hatch run build-all -j 8
+    ```
+    A single VM is generally assigned 2 CPU cores.
+
+#### Run a build for a subset of images
+
+1.  Generate the **run** directory with the `hatch run generate-bare-run` script:
+    ```console
+    hatch run generate-bare-run
+    ```
+    By default, the **run** is configured to test the stable version of Red. \
+    You can change that with the `--pr`, `--branch`, or `--version` options.
+    You can also choose to test Red from a fork using the `--repo` option.
+    ```console
+    hatch run generate-bare-run --pr 6785
+    hatch run generate-bare-run --version 3.5.25
+    hatch run generate-bare-run --repo Jackenmen/Red-DiscordBot --branch add_os_image_locations
+    ```
+1.  Generate the **job** and **build** directories with the `hatch run generate-jobs` script:
+    ```console
+    hatch run generate-jobs ubuntu-2404 "windows-*"
+    ```
+    When specifying a pattern, only jobs that can be executed on current system will match. \
+    Additionally, you can exclude images that require emulation to run using the `--skip-emulation` flag:
+    ```console
+    hatch run create-job --skip-emulation "ubuntu-*"
+    ```
+1.  Run the build with the `red-install-tests build-all` command:
+    ```console
+    hatch run build-all
+    ```
+
+#### Run a build for a single image
+
+1.  Generate the **run** directory with the `hatch run generate-bare-run` script:
+    ```console
+    hatch run generate-bare-run
+    ```
+    By default, the **run** is configured to test the stable version of Red. \
+    You can change that with the `--pr`, `--branch`, or `--version` options.
+    You can also choose to test Red from a fork using the `--repo` option.
+    ```console
+    hatch run generate-bare-run --pr 6785
+    hatch run generate-bare-run --version 3.5.25
+    hatch run generate-bare-run --repo Jackenmen/Red-DiscordBot --branch add_os_image_locations
+    ```
+1.  Generate the **job** and **build** directories with the `hatch run generate-job` script:
+    ```console
+    hatch run generate-job ubuntu-2404
+    ```
+1.  Run the build with the `red-install-tests build` command:
+    ```console
+    hatch run build
+    ```
 
 ### Advanced usage
 
