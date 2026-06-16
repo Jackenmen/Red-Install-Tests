@@ -98,3 +98,14 @@ This repo also allows for requesting builds for pending PRs on demand.
     Please note that, when `--all` option is specified, the `--job-dir` (aliased to `--run-dir`)
     is treated as **run directory**, not a **job directory**.
     Individual job directories are searched for the `<run_dir>/jobs` directory, as described above.
+1.  Run a single build with the `red-install-tests build` command:
+    ```console
+    hatch run build
+    ```
+    By default, the **job directory** will be the `os-build-run` subdirectory of the current directory.
+    This can be changed with the `--job-dir` option.
+
+    Alternatively, you can run builds for all jobs with the `red-install-tests build-all` command:
+    ```console
+    hatch run build-all
+    ```

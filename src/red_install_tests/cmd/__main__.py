@@ -4,6 +4,8 @@ from typing import Protocol
 from red_install_tests.cli import ParserSetupFunc
 
 from . import (
+    build,
+    build_all,
     configure_run,
     create_job,
     download_builder_requirements,
@@ -29,6 +31,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
 
+    _add_parser(subparsers, build)
+    _add_parser(subparsers, build_all)
     _add_parser(subparsers, create_job)
     _add_parser(subparsers, configure_run)
     _add_parser(subparsers, download_builder_requirements)
