@@ -18,9 +18,11 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
+    "cryptography",
     "lxml",
     "niquests[http3,speedups]",
     "platformdirs",
+    "pyyaml",
     "rich",
     "typing-extensions",
 ]
@@ -48,6 +50,7 @@ download-red-repo = "red-install-tests download-red-repo --run-dir {root}{/}os-b
 generate-os-matrix = "red-install-tests generate-os-matrix --run-dir {root}{/}os-build-run {args}"
 create-job = "red-install-tests create-job --run-dir {root}{/}os-build-run {args}"
 download-builder-requirements = "red-install-tests download-builder-requirements --deps-dir {root}{/}deps {args}"
+prepare-build-dir = "red-install-tests prepare-build-dir --job-dir {root}{/}os-build-run {args}"
 
 [tool.hatch.envs.hatch-check-types]
 dependencies = ["ty", "Red-DiscordBot", "setuptools", "types-lxml"]

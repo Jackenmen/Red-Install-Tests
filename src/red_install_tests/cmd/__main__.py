@@ -10,6 +10,7 @@ from . import (
     download_image,
     download_red_repo,
     generate_os_matrix,
+    prepare_build_dir,
     prepare_raspi_img,
 )
 
@@ -34,6 +35,7 @@ def main() -> None:
     _add_parser(subparsers, download_image)
     _add_parser(subparsers, download_red_repo)
     _add_parser(subparsers, generate_os_matrix)
+    _add_parser(subparsers, prepare_build_dir)
     _add_parser(subparsers, prepare_raspi_img)
 
     args = parser.parse_args()

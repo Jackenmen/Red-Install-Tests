@@ -82,3 +82,19 @@ This repo also allows for requesting builds for pending PRs on demand.
     ```console
     hatch run download-builder-requirements packer tart
     ```
+1.  Prepare **build** directory for the **job** with the `red-install-tests prepare-build-dir` command:
+    ```console
+    hatch run prepare-build-dir
+    ```
+    By default, the **job directory** will be the `os-build-run` subdirectory of the current directory.
+    This can be changed with the `--job-dir` option.
+
+    Build directories for all jobs can be prepare by passing the `--all` option:
+    ```console
+    hatch run prepare-build-dir --all
+    ```
+    This will generate a build directory for all job directories in the `<run_dir>/jobs` directory.
+
+    Please note that, when `--all` option is specified, the `--job-dir` (aliased to `--run-dir`)
+    is treated as **run directory**, not a **job directory**.
+    Individual job directories are searched for the `<run_dir>/jobs` directory, as described above.
