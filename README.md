@@ -70,3 +70,15 @@ This repo also allows for requesting builds for pending PRs on demand.
     Please note that, when specifying a pattern *and* the `--job-dir` option,
     the **job directories** will be subdirectories under the specified directory,
     not the specified directory itself
+1.  Download builder requirements with the `red-install-tests download-builder-requirements` command:
+    ```console
+    hatch run download-builder-requirements
+    ```
+    These are downloaded to "deps" subdirectory of the current directory,
+    which is where the `red-install-tests prepare-build-dir` command
+    expects to find the dependencies. As such, it's not configurable.
+
+    You can download a subset of builder requirements by specifying them as positional arguments:
+    ```console
+    hatch run download-builder-requirements packer tart
+    ```

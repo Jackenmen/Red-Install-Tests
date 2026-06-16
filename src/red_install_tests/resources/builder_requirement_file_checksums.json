@@ -1,0 +1,23 @@
+{
+    "7zr.exe": "sha256:abcf64ae1cbafddb5395e4cdd3bdc7e3e0561d54a0c6380e3dd43bdbffe519a2",
+    "7z2601-arm64.exe": "sha256:1fecf4e3407950939c8ffcc3e42e3039821997dea155301c75369474e5f15175",
+    "7z2601-x64.exe": "sha256:d64a0468f5b5b0b0fc5b2188450bcd655b70809d97b1c4535f2884635094377d",
+    "7z2601-linux-x64.tar.xz": "sha256:8ea0fc8a135e7b848e80a4116fe22dff56c8c4518dde1f43cce67f4e340b437a",
+    "7z2601-linux-arm64.tar.xz": "sha256:39f8c9070c300a63c7484d9a983119ef3edf841e1ddf69f1affae29fdec5f612",
+    "7z2601-mac.tar.xz": "sha256:0b6b930dbf82742e3f1014c35072a6b8b3aab183fece348e7f723675f1c5bea2",
+    "ovmf_2022.11-6+deb12u2_all.deb": "sha256:e73d3d1a8799f7f6fc16b73501d913edcdd86237556fbff30693e747e6dc262e",
+    "packer_1.15.3_darwin_amd64.zip": "sha256:7718bee4a580d7c486263f10a28d00db7e8c600af08102ae118592ee30a50892",
+    "packer_1.15.3_darwin_arm64.zip": "sha256:cca1601f2d187b084aa875183ae70e85521df0475fc0f61a7380e46df8980289",
+    "packer_1.15.3_linux_amd64.zip": "sha256:9ed712c9a8f223c7985d7d21c6b65744bf1c66b8aca333232b96f5ae3fd9c90d",
+    "packer_1.15.3_linux_arm64.zip": "sha256:ebf06f8f30a7e3bc69fa33ac8a5dfffefd70187df4541cccc6ef3f325b8ae4f1",
+    "packer_1.15.3_windows_amd64.zip": "sha256:f0a256f13f8217070309f690e15ba76d53667f72da8efbcd33179d41c883ebdd",
+    "qemu-efi-aarch64_2022.11-6+deb12u2_all.deb": "sha256:9a55c7b94fdf13a28928359a77d42e5364aa3ae2e558bd1fd5361955bf479d81",
+    "raspberrypi-utils-Linux-amd64-Release.zip": "sha256:7baf18d94e455568f9f816b68a142b12e9ca6d9c698ec39605ea46aea65ea7c1",
+    "raspberrypi-utils-Linux-arm64-Release.zip": "sha256:b6761051d687c3bdec57e111311dba9fa61545d769630a90b326bdacf40e5cae",
+    "raspberrypi-utils-macOS-amd64-Release.zip": "sha256:74583b88ff8adcbb1acaa698b730f4fad77afd68f9ae1fd9c3671b93e601a6f5",
+    "raspberrypi-utils-macOS-arm64-Release.zip": "sha256:add08612920cb57c5c71e6ae36ae010ed5a1edfc6d5a9cc1995c58dc36ccf29f",
+    "raspberrypi-utils-Windows-amd64-Release.zip": "sha256:61b60eb9159b67cfd2ce80e6045b5e5b34adcb0ed68b0f2088fd0b712b4fdb66",
+    "raspberrypi-utils-Windows-arm64-Release.zip": "sha256:78a9afbb43acdcf21ce34fe1b24d6a042632a84199554de1d25d9ed5e1d85a2f",
+    "tart.tar.gz": "sha256:8554ab4f7fc12afe52f9b7e3093a935673cbac737a83973d2db7a0683c814529",
+    "virtio-win-prewhql-0.1.zip": "sha256:db3b687b2863efc874e31520f3aed07fc106b1cad295dfa0a86f96855b0fc8ab"
+}

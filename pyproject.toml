@@ -39,11 +39,15 @@ source = "vcs"
 [tool.hatch.envs.default]
 python = "3.10"
 
+[tool.hatch.envs.default.env-vars]
+PATH = "{root}{/}deps{/}bin{;}{env:PATH}"
+
 [tool.hatch.envs.default.scripts]
 configure-run = "red-install-tests configure-run --run-dir {root}{/}os-build-run {args}"
 download-red-repo = "red-install-tests download-red-repo --run-dir {root}{/}os-build-run {args}"
 generate-os-matrix = "red-install-tests generate-os-matrix --run-dir {root}{/}os-build-run {args}"
 create-job = "red-install-tests create-job --run-dir {root}{/}os-build-run {args}"
+download-builder-requirements = "red-install-tests download-builder-requirements --deps-dir {root}{/}deps {args}"
 
 [tool.hatch.envs.hatch-check-types]
 dependencies = ["ty", "Red-DiscordBot", "setuptools", "types-lxml"]
@@ -115,6 +119,8 @@ ignore = [
     "RUF022",
     # `assert` is expected to be used in code (to appease type checkers)
     "S101",
+    # in general, this rule makes sense but it doesn't really make sense to apply for our use
+    "S103",
     # we already take care to use extraction filter on the archive so this just results
     # in annoying false positives
     "S202",
