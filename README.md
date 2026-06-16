@@ -39,3 +39,7 @@ This repo also allows for requesting builds for pending PRs on demand.
     hatch run configure-run --version 3.5.25
     hatch run configure-run --repo Jackenmen/Red-DiscordBot --branch add_os_image_locations
     ```
+1.  Download the Red repository for the **run directory** with the `red-install-tests download-red-repo` command:
+    ```console
+    hatch run download-red-repo
+    ```

@@ -5,6 +5,7 @@ from red_install_tests.cli import ParserSetupFunc
 
 from . import (
     configure_run,
+    download_red_repo,
 )
 
 
@@ -23,6 +24,7 @@ def main() -> None:
     subparsers = parser.add_subparsers(required=True)
 
     _add_parser(subparsers, configure_run)
+    _add_parser(subparsers, download_red_repo)
 
     args = parser.parse_args()
     args.func(args)

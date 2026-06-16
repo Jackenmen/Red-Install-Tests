@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
+    "niquests[http3,speedups]",
     "typing-extensions",
 ]
 
@@ -37,6 +38,7 @@ python = "3.10"
 
 [tool.hatch.envs.default.scripts]
 configure-run = "red-install-tests configure-run --run-dir {root}{/}os-build-run {args}"
+download-red-repo = "red-install-tests download-red-repo --run-dir {root}{/}os-build-run {args}"
 
 [tool.hatch.envs.hatch-check-types]
 dependencies = ["ty", "Red-DiscordBot", "setuptools"]
@@ -108,6 +110,9 @@ ignore = [
     "RUF022",
     # `assert` is expected to be used in code (to appease type checkers)
     "S101",
+    # we already take care to use extraction filter on the archive so this just results
+    # in annoying false positives
+    "S202",
     # the idea of checking untrusted input is not a bad one but this is prone to false positives
     "S603",
     # `contextlib.suppress()` is slower than `try-except-pass`
