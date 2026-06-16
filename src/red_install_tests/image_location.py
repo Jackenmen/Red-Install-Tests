@@ -102,6 +102,10 @@ class _BaseImageSpec(TypedDict):
     expected_java_version: ReadOnly[int]
 
 
+class _ClosedBaseImageSpec(_BaseImageSpec, closed=True):
+    pass
+
+
 class DiskImageSpec(_BaseImageSpec, closed=True):
     spec_type: Literal["disk"]
     url: ReadOnly[str]
@@ -129,7 +133,9 @@ def _get_default_boot_mode(machine_type: MachineType) -> BootModeType:
     return "uefi"
 
 
-def _create_base_image_spec(spec_type: SpecType, location: _BaseImageLocation) -> _BaseImageSpec:
+def _create_base_image_spec(
+    spec_type: SpecType, location: _BaseImageLocation
+) -> _ClosedBaseImageSpec:
     os_type = location.get("os", "linux")
     arch = location.get("arch", "x86_64" if os_type != "darwin" else "aarch64")
     return {
