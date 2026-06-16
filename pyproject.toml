@@ -21,6 +21,9 @@ dependencies = [
     "typing-extensions",
 ]
 
+[project.scripts]
+red-install-tests = "red_install_tests.cmd.__main__:main"
+
 [project.urls]
 Documentation = "https://github.com/Jackenmen/Red-Install-Tests#readme"
 Issues = "https://github.com/Jackenmen/Red-Install-Tests/issues"
