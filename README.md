@@ -43,3 +43,26 @@ This repo also allows for requesting builds for pending PRs on demand.
     ```console
     hatch run download-red-repo
     ```
+1.  Create a **job** for an image in the OS matrix with the `red-install-tests create-job` command:
+    ```console
+    hatch run create-job ubuntu-2204
+    ```
+    By default, the **job directory** will be `<run_dir>/jobs/<image_name>`.
+    This can be changed with the `--job-dir` option.
+
+    The command can also be used to create multiple jobs (patterns support wildcards):
+    ```console
+    hatch run create-job opensuse-tumbleweed "windows-*"
+    ```
+    or jobs for all compatible images in the OS matrix:
+    ```console
+    hatch run create-job "*"
+    ```
+    When specifying a pattern, only jobs that can be executed on current system will match. \
+    Additionally, you can exclude images that require emulation to run using the `--skip-emulation` flag:
+    ```console
+    hatch run create-job --skip-emulation "*"
+    ```
+    Please note that, when specifying a pattern *and* the `--job-dir` option,
+    the **job directories** will be subdirectories under the specified directory,
+    not the specified directory itself

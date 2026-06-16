@@ -28,3 +28,7 @@ def run(parser: argparse.ArgumentParser) -> None:
 
 def add_run_dir_option(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--run-dir", "--rundir", default=DEFAULT_RUN_DIR)
+
+
+def add_job_dir_option(parser: argparse.ArgumentParser, *, with_default: bool = False) -> None:
+    parser.add_argument("--job-dir", "--jobdir", default=DEFAULT_RUN_DIR if with_default else None)
