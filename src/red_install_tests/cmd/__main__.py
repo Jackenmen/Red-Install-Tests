@@ -7,6 +7,7 @@ from . import (
     configure_run,
     create_job,
     download_red_repo,
+    generate_os_matrix,
     prepare_raspi_img,
 )
 
@@ -28,6 +29,7 @@ def main() -> None:
     _add_parser(subparsers, create_job)
     _add_parser(subparsers, configure_run)
     _add_parser(subparsers, download_red_repo)
+    _add_parser(subparsers, generate_os_matrix)
     _add_parser(subparsers, prepare_raspi_img)
 
     args = parser.parse_args()

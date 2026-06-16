@@ -43,6 +43,10 @@ This repo also allows for requesting builds for pending PRs on demand.
     ```console
     hatch run download-red-repo
     ```
+1.  Generate the OS matrix with the `red-install-tests generate-os-matrix` command:
+    ```console
+    hatch run generate-os-matrix
+    ```
 1.  Create a **job** for an image in the OS matrix with the `red-install-tests create-job` command:
     ```console
     hatch run create-job ubuntu-2204
