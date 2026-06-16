@@ -10,7 +10,9 @@ variable "red_package_spec" {
 
 variable "red_install_instructions" {
   type = list(object({
+    shell = string
     commands = list(string)
+    elevated = bool
   }))
 }
 
@@ -28,6 +30,15 @@ variable "build_name" {
   type = string
 }
 
+variable "os" {
+  type = string
+  default = "linux"
+  validation {
+    condition = contains(["darwin", "linux", "windows"], var.os)
+    error_message = "The os value must be one of: darwin, linux, windows."
+  }
+}
+
 locals {
   env_vars = merge(
     {
@@ -40,7 +51,41 @@ locals {
   source_name = "tests"
   sources = ["${local.source_type}.${local.source_name}"]
 
-  tmp_dir = "/tmp"
+  gsudo_drop_elevation_command = "C:\\gsudo\\gsudo.exe -i Medium "
+  windows_python_execute_command = replace(
+    <<-EOT
+    call C:\\ProgramData\\chocolatey\\bin\\RefreshEnv.cmd
+    && call %USERPROFILE%\\redenv\\Scripts\\activate.bat
+    && {{ .Vars }}${local.gsudo_drop_elevation_command}python {{ .Path }}
+    EOT
+    ,
+    "\n",
+    "",
+  )
+  powershell_execute_command = replace(
+    <<-EOT
+    powershell -executionpolicy bypass "& {
+      if (Test-Path variable:global:ProgressPreference) {
+        set-variable -name variable:global:ProgressPreference -value 'SilentlyContinue'
+      };
+      . {{.Vars}};
+      &${local.gsudo_drop_elevation_command}'{{.Path}}';
+      exit $LastExitCode
+    }"
+    EOT
+    ,
+    "\n",
+    "",
+  )
+  powershell_elevated_execute_command = replace(
+    local.powershell_execute_command, local.gsudo_drop_elevation_command, ""
+  )
+  cmd_execute_command = "cmd /c {{ .Vars }} ${local.gsudo_drop_elevation_command}\"{{ .Path }}\""
+  cmd_elevated_execute_command = replace(
+    local.cmd_execute_command, local.gsudo_drop_elevation_command, ""
+  )
+  tmp_dir = var.os == "windows" ? "C:/Users/packer/AppData/Local/Temp" : "/tmp"
+  tmp_dir_winsep = var.os == "windows" ? replace(local.tmp_dir, "/", "\\") : local.tmp_dir
   default_unix_shell = "bash"
 }
 
@@ -51,16 +96,72 @@ build {
   // Ensure cloud-init finishes before doing anything.
   provisioner "shell" {
     inline = ["cloud-init status --long --wait"]
+    only = var.os == "linux" ? local.sources : [""]
   }
 
   // Run provided install instructions.
   dynamic "provisioner" {
     for_each = var.red_install_instructions
-    labels = ["shell"]
+    labels = [provisioner.value.shell]
     content {
-      inline = concat(["set -eo pipefail"], provisioner.value.commands)
+      execute_command = (
+        provisioner.value.shell == "shell"
+          // Unix shell
+          ? "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
+          // Windows
+          : (
+            provisioner.value.shell == "powershell"
+              // PowerShell
+              ? (
+                  provisioner.value.elevated
+                    ? local.powershell_elevated_execute_command
+                    : local.powershell_execute_command
+              )
+              // Command Prompt
+              : (
+                  provisioner.value.elevated
+                    ? local.cmd_elevated_execute_command
+                    : local.cmd_execute_command
+              )
+          )
+      )
+      inline = (
+        provisioner.value.shell == "windows-shell"
+          ? [for cmd in provisioner.value.commands : "call ${cmd} || exit /b"]
+          : (
+            provisioner.value.shell == "shell"
+              ? concat(["set -eo pipefail"], provisioner.value.commands)
+              : provisioner.value.commands
+          )
+      )
       env = local.env_vars
-      inline_shebang = "/usr/bin/env -S ${local.default_unix_shell} -il"
+      // the below conditions have to be mutually exclusive to avoid one overriding another
+      override = {
+        (provisioner.value.shell == "shell" ? local.source_name : "") = {
+          inline_shebang = "/usr/bin/env -S ${local.default_unix_shell} -il"
+        }
+        (
+          provisioner.value.shell == "powershell" && provisioner.value.elevated
+            ? local.source_name
+            : ""
+        ) = {
+          elevated_user = "packer"
+          elevated_password = "packer"
+          remote_path = "${local.tmp_dir}/script-${uuidv4()}.ps1"
+          remote_env_var_path = "${local.tmp_dir}/packer-ps-env-vars-${uuidv4()}.ps1"
+        }
+        (
+          provisioner.value.shell == "powershell" && !provisioner.value.elevated
+            ? local.source_name
+            : ""
+        ) = {
+          remote_path = "${local.tmp_dir}/script-${uuidv4()}.ps1"
+          remote_env_var_path = "${local.tmp_dir}/packer-ps-env-vars-${uuidv4()}.ps1"
+        }
+        (provisioner.value.shell == "windows-shell" ? local.source_name : "") = {
+          remote_path = "${local.tmp_dir}/script-${uuidv4()}.bat"
+        }
+      }
     }
   }
 
@@ -80,11 +181,13 @@ build {
       "${path.root}/tests/check_java_version.py",
       "${path.root}/tests/run_tests.py",
     ]
-    labels = ["shell"]
+    labels = [var.os == "windows" ? "windows-shell" : "shell"]
     content {
       script = provisioner.value
       execute_command = (
-        "chmod +x {{ .Path }}; source ~/redenv/bin/activate; {{ .Vars }} python {{ .Path }}"
+        var.os == "windows"
+          ? local.windows_python_execute_command
+          : "chmod +x {{ .Path }}; source ~/redenv/bin/activate; {{ .Vars }} python {{ .Path }}"
       )
       remote_path = "${local.tmp_dir}/script-${uuidv4()}.py"
       env = local.env_vars

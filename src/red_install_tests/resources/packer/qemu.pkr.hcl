@@ -50,6 +50,11 @@ variable "http_content" {
   default = null
 }
 
+variable "floppy_files" {
+  type = list(string)
+  default = null
+}
+
 variable "cd_content" {
   type = map(string)
   default = null
@@ -98,11 +103,13 @@ source "qemu" "tests" {
   use_backing_file = var.use_backing_file
 
   # Set to a high enough size to avoid shrinking the base disk image.
+  # When on Windows, this must be enough storage for Windows install and Red.
   # In particular:
   # - Oracle Linux base images are 37 GB
+  # - Windows 11 refuses to install on a partition smaller than 52 GB so we need 53 GB
   # When disk_interface is an SD card, this must be a power of 2,
   # so we'll just special-case Raspberry Pi 3B.
-  disk_size = local.machine_type == "raspi3b" ? "16G" : "50G"
+  disk_size = local.machine_type == "raspi3b" ? "16G" : "53G"
 
   # avoid launching a GUI for the VNC connection
   headless = var.headless
@@ -110,6 +117,7 @@ source "qemu" "tests" {
   # cloud-init configuration
   ssh_private_key_file = var.ssh_private_key_file
   http_content = var.http_content
+  floppy_files = var.floppy_files
   cd_content = local.machine_type == "raspi3b" ? null : var.cd_content
   cd_label = "cidata"
   ssh_username = "packer"
@@ -119,8 +127,9 @@ source "qemu" "tests" {
 
   # RAM values:
   # - for Raspberry Pi 3B, it needs to match the actual board (1 GB)
+  # - for Windows, the minimum is 4 GB
   # - for Linux, the minimum of some distros (RHEL derivatives) is 1.5 GB
-  memory = local.machine_type == "raspi3b" ? 1024 : 1536
+  memory = local.machine_type == "raspi3b" ? 1024 : (var.os == "windows" ? 4096 : 1536)
 
   # Use correct specs for Raspberry Pi 3B board emulation
   # https://www.qemu.org/docs/master/system/arm/raspi.html
@@ -132,8 +141,9 @@ source "qemu" "tests" {
   cpu_model = local.is_x86_64 ? "host" : (local.machine_type == "raspi3b" ? "" : "max")
 
   # SSH timeout values:
+  # - for Windows, it needs to be larger because we have to install the system from scratch
   # - for Linux ARM, it needs to be larger because we (usually) have to emulate it and boot is slower
   # - for Linux x86_64, boot takes only around a minute
-  ssh_timeout = !local.is_x86_64 ? "10m" : "5m"
+  ssh_timeout = (var.os == "windows" ? "15m" : (!local.is_x86_64 ? "10m" : "5m"))
   qemuargs = local.qemu_args
 }
