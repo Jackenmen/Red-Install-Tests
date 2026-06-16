@@ -1,0 +1,114 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "Red-Install-Tests"
+dynamic = ["version"]
+description = "Test harness for running Red's installation instructions."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Jakub Kuczys", email = "me@jacken.men" },
+]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = [
+    "typing-extensions",
+]
+
+[project.urls]
+Documentation = "https://github.com/Jackenmen/Red-Install-Tests#readme"
+Issues = "https://github.com/Jackenmen/Red-Install-Tests/issues"
+Source = "https://github.com/Jackenmen/Red-Install-Tests"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.envs.default]
+python = "3.10"
+
+[tool.hatch.envs.hatch-check-types]
+dependencies = ["ty", "Red-DiscordBot", "setuptools"]
+
+[tool.hatch.envs.hatch-check-types.scripts]
+check = "ty check"
+
+[tool.ruff]
+line-length = 99
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = [
+    # pyflakes rules
+    "F",
+    # pycodestyle rules
+    "E",
+    "W",
+    # import sorting
+    "I",
+    # pyupgrade rules
+    "UP",
+    # flake8-bugbear rules
+    "B",
+    # flake8-bandit rules
+    "S",
+    # builtin shadowing rules
+    "A",
+    # unused arguments
+    "ARG",
+    # refurb rules
+    "FURB",
+    "FURB148",  # unnecessary-enumerate (in preview)
+    # flake8-simplify rules
+    "SIM",
+    # flake8-logging rules
+    "LOG",
+    # flake8-logging-format rules
+    "G",
+    # flake8-comprehensions rules
+    "C4",
+    # "boolean trap" rules
+    "FBT",
+    # disallow implicitly concatenated strings on a single line
+    # and explicitly concatenated strings
+    "ISC",
+    # perflint rules
+    "PERF",
+    # pygrep-hooks rules
+    "PGH",
+    # flake8-pie rules
+    "PIE",
+    # flake8-return rules
+    "RET",
+    # collection of rules unique to Ruff
+    "RUF",
+    # leftover `breakpoint()`
+    "T100",
+    # flake8-tidy-imports rules
+    "TID",
+]
+ignore = [
+    # setattr is needed to make type checkers happy when creating new attributes on objects
+    "B010",
+    # disable __all__ sorting
+    # see https://github.com/astral-sh/ruff/issues/20952
+    "RUF022",
+    # `assert` is expected to be used in code (to appease type checkers)
+    "S101",
+    # the idea of checking untrusted input is not a bad one but this is prone to false positives
+    "S603",
+    # `contextlib.suppress()` is slower than `try-except-pass`
+    "SIM105",
+]
+preview = true
+explicit-preview-rules = true
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
