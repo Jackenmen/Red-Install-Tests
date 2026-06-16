@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
+    "lxml",
     "niquests[http3,speedups]",
     "typing-extensions",
 ]
@@ -41,7 +42,7 @@ configure-run = "red-install-tests configure-run --run-dir {root}{/}os-build-run
 download-red-repo = "red-install-tests download-red-repo --run-dir {root}{/}os-build-run {args}"
 
 [tool.hatch.envs.hatch-check-types]
-dependencies = ["ty", "Red-DiscordBot", "setuptools"]
+dependencies = ["ty", "Red-DiscordBot", "setuptools", "types-lxml"]
 
 [tool.hatch.envs.hatch-check-types.scripts]
 check = "ty check"
