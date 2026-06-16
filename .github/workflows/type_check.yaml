@@ -1,0 +1,20 @@
+name: Type check
+on:
+  push:
+  pull_request:
+
+jobs:
+  type_check:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6
+
+      - name: Install Hatch
+        uses: pypa/hatch@install
+
+      - name: Run type checker
+        env:
+          TY_OUTPUT_FORMAT: github
+        run: hatch check types
