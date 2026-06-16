@@ -3,6 +3,10 @@ from typing import Protocol
 
 from red_install_tests.cli import ParserSetupFunc
 
+from . import (
+    configure_run,
+)
+
 
 class _CmdModule(Protocol):
     __name__: str
@@ -17,6 +21,8 @@ def _add_parser(subparsers: argparse._SubParsersAction, module: _CmdModule) -> N
 def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
+
+    _add_parser(subparsers, configure_run)
 
     args = parser.parse_args()
     args.func(args)

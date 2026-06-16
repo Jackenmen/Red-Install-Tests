@@ -35,6 +35,9 @@ source = "vcs"
 [tool.hatch.envs.default]
 python = "3.10"
 
+[tool.hatch.envs.default.scripts]
+configure-run = "red-install-tests configure-run --run-dir {root}{/}os-build-run {args}"
+
 [tool.hatch.envs.hatch-check-types]
 dependencies = ["ty", "Red-DiscordBot", "setuptools"]
 

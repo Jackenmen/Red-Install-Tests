@@ -2,6 +2,8 @@ import argparse
 from collections.abc import Callable
 from typing import Any, Protocol
 
+from .run_config import DEFAULT_RUN_DIR
+
 
 class ParserSetupFunc(Protocol):
     def __call__(
@@ -22,3 +24,7 @@ def parser_spec(func: Callable[[argparse.ArgumentParser], Any]) -> ParserSetupFu
 def run(parser: argparse.ArgumentParser) -> None:
     args = parser.parse_args()
     args.func(args)
+
+
+def add_run_dir_option(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--run-dir", "--rundir", default=DEFAULT_RUN_DIR)
