@@ -86,7 +86,7 @@ locals {
   )
   tmp_dir = var.os == "windows" ? "C:/Users/packer/AppData/Local/Temp" : "/tmp"
   tmp_dir_winsep = var.os == "windows" ? replace(local.tmp_dir, "/", "\\") : local.tmp_dir
-  default_unix_shell = "bash"
+  default_unix_shell = var.os == "darwin" ? "zsh" : "bash"
 }
 
 build {
