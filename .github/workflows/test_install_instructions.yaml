@@ -142,6 +142,16 @@ jobs:
       - name: Prepare build directory
         run: hatch run prepare-build-dir
 
+      - name: Debug via SSH (continue to build)
+        run: (sleep 15; touch ~/continue) &
+
+      - name: Debug via SSH
+        if: always() && contains(fromJSON('["ubuntu-2404-arm-raspi"]'), matrix.image_spec.name)
+        uses: luchihoratiu/debug-via-ssh@0fa6048b80328b0fb5bf2b8f68c5f50629b67abc
+        with:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+
       - name: Build
         id: build
         env:
