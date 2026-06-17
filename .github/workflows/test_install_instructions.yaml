@@ -1,0 +1,128 @@
+name: Test install instructions
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        type: string
+        default: Cog-Creators/Red-DiscordBot
+      branch:
+        type: string
+      version:
+        type: string
+      pull-request:
+        type: number
+  workflow_call:
+    inputs:
+      repo:
+        type: string
+        default: Cog-Creators/Red-DiscordBot
+      branch:
+        type: string
+      version:
+        type: string
+      pull-request:
+        type: number
+
+jobs:
+  generate-matrix:
+    name: Generate OS matrix
+    runs-on: ubuntu-latest
+
+    outputs:
+      run-config: ${{ steps.generate-run.outputs.run-config }}
+      os-matrix: ${{ steps.generate-run.outputs.os-matrix }}
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6
+
+      - name: Install Hatch
+        uses: pypa/hatch@install
+
+      - name: Generate run
+        id: generate-run
+        env:
+          INPUTS_REPO: ${{ inputs.repo }}
+          INPUTS_BRANCH: ${{ inputs.branch }}
+          INPUTS_VERSION: ${{ inputs.version }}
+          INPUTS_PULL_REQUEST: ${{ inputs.pull-request }}
+        run: |
+          hatch run generate-bare-run \
+            --repo "$INPUTS_REPO" \
+            --branch "$INPUTS_BRANCH" \
+            --version "$INPUTS_VERSION" \
+            --pr "$INPUTS_PULL_REQUEST"
+          (echo -n 'run-config=' && cat os-build-run/run_config.json && echo) >> "$GITHUB_OUTPUT"
+          (echo -n 'os-matrix=' && cat os-build-run/os_matrix.json && echo) >> "$GITHUB_OUTPUT"
+
+  test-install-instructions:
+    name: ${{ matrix.image_spec.name }} - Test install instructions
+    needs: generate-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.generate-matrix.outputs.os-matrix) }}
+    # Linux ARM runners lack KVM acceleration so there's technically not much benefit to
+    # using Linux ARM runners for this right now:
+    # https://github.com/actions/runner-images/issues/14062
+    runs-on: >-
+      ${{ case(
+          matrix.image_spec.os == 'darwin', 'macos-latest',
+          matrix.image_spec.arch == 'aarch64', 'ubuntu-24.04-arm',
+          'ubuntu-24.04'
+      ) }}
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6
+
+      - name: Install Hatch
+        uses: pypa/hatch@install
+
+      - name: Prepare job directory
+        env:
+          RUN_CONFIG: ${{ needs.generate-matrix.outputs.run-config }}
+          JOB_CONFIG: ${{ toJSON(matrix) }}
+        run: |
+          mkdir os-build-run
+          echo "$RUN_CONFIG" > os-build-run/run_config.json
+          echo "$JOB_CONFIG" > os-build-run/job_config.json
+
+      - name: Download builder requirements (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install qemu-system xorriso
+          # `usermod -aG "$USER" kvm` doesn't seem to be enough so just chown it...
+          if [[ -e /dev/kvm ]]; then
+            sudo chown "$USER" /dev/kvm
+          fi
+          hatch run download-builder-requirements
+
+      - name: Download builder requirements (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install qemu
+          hatch run download-builder-requirements
+
+      - name: Prepare build directory
+        run: hatch run prepare-build-dir
+
+      - name: Build
+        id: build
+        env:
+          PACKER_GITHUB_API_TOKEN: ${{ github.token }}
+        run: hatch run build
+
+      - name: Collect logs
+        env:
+          IMAGE_NAME: ${{ matrix.image_spec.name }}
+        if: always() && contains(fromJSON('["success", "failure"]'), steps.build.conclusion)
+        run: cp os-build-run/packer-build/packer.log "${IMAGE_NAME}-packer.log"
+
+      - name: Upload Packer logs
+        if: always() && contains(fromJSON('["success", "failure"]'), steps.build.conclusion)
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.image_spec.name }}-packer.log
+          archive: false
