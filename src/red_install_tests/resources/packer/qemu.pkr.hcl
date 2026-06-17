@@ -134,11 +134,9 @@ source "qemu" "tests" {
 
   # Keystrokes to send over VNC, only needed on Windows in UEFI mode
   # to get through the "Press any key to boot from CD or DVD" prompt.
-  boot_command = var.os == "windows" ? [
-    "<spacebar><spacebar><spacebar><spacebar><spacebar><spacebar>",
-  ] : []
+  # With default boot key interval of 100ms, 600 keystrokes should happen over the time of ~60s.
+  boot_command = var.os == "windows" ? [for i in range(600): "<bs>"] : []
   boot_wait = "-1s"
-  boot_key_interval = "500ms"
 
   # Use the correct binary for the tested system
   qemu_binary = "qemu-system-${var.architecture}"
