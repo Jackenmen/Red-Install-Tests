@@ -53,8 +53,10 @@ jobs:
             --branch "$INPUTS_BRANCH" \
             --version "$INPUTS_VERSION" \
             --pr "$INPUTS_PULL_REQUEST"
+          # macOS does not support nested virtualization so we have to skip these for now:
+          # https://github.com/actions/runner-images/issues/13505
           (echo -n 'run-config=' && cat os-build-run/run_config.json && echo) >> "$GITHUB_OUTPUT"
-          (echo -n 'os-matrix=' && cat os-build-run/os_matrix.json && echo) >> "$GITHUB_OUTPUT"
+          (echo -n 'os-matrix=' && jq -c '. | map(select(.image_spec.os != "darwin"))' os-build-run/os_matrix.json) >> "$GITHUB_OUTPUT"
 
   test-install-instructions:
     name: ${{ matrix.image_spec.name }} - Test install instructions
