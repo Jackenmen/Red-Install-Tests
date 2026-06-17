@@ -87,10 +87,18 @@ variable "extra_qemu_args" {
 locals {
   is_x86_64 = var.architecture == "x86_64"
   machine_type = coalesce(var.machine_type, local.is_x86_64 ? "q35" : "virt")
+  net_device = local.machine_type == "raspi3b" ? "usb-net" : "virtio-net"
   qemu_args = concat(
+    local.machine_type == "raspi3b" ? [] : [
+      ["-device", "qemu-xhci"],
+      ["-device", "virtio-gpu-pci"],
+    ],
     [
       ["-machine", "type=${local.machine_type},accel=hvf:kvm:whpx:tcg"],
       ["-serial", "stdio"],
+      ["-device", "${local.net_device},netdev=user.0"],
+      ["-device", "usb-kbd"],
+      ["-device", "usb-tablet"],
     ],
     var.extra_qemu_args,
   )
@@ -150,7 +158,7 @@ source "qemu" "tests" {
   # Use correct specs for Raspberry Pi 3B board emulation
   # https://www.qemu.org/docs/master/system/arm/raspi.html
   cpus = local.machine_type == "raspi3b" ? 4 : var.cpus
-  net_device = local.machine_type == "raspi3b" ? "usb-net" : "virtio-net"
+  net_device = local.net_device
   disk_interface = local.machine_type == "raspi3b" ? "sd" : "virtio"
   # Some OSes may require x86-64-v3 extensions or ARMv8.2-A (rather than ARMv8.0)
   # so just go with host / max to get the fullest feature set we can.
