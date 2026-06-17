@@ -21,7 +21,7 @@ def positive_int(arg: str) -> int:
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     add_run_dir_option(parser)
-    parser.add_argument("--max-parallel-jobs", "-j", type=positive_int, default=1, nargs="*")
+    parser.add_argument("--max-parallel-jobs", "-j", type=positive_int, default=1)
     parser.add_argument("extra_packer_args", nargs="*")
     parser.set_defaults(func=main)
 
@@ -29,7 +29,34 @@ def setup_parser(parser: argparse.ArgumentParser, /) -> None:
 async def _wait_for_process(
     proc: asyncio.subprocess.Process,
 ) -> tuple[asyncio.subprocess.Process, int]:
-    return proc, await proc.wait()
+    try:
+        return proc, await proc.wait()
+    except asyncio.CancelledError:
+        proc.terminate()
+        await asyncio.wait_for(proc.wait(), timeout=3.0)
+        proc.kill()
+        raise
+
+
+_WaitForProcessTask = asyncio.Task[tuple[asyncio.subprocess.Process, int]]
+
+
+async def _wait(
+    pending: set[_WaitForProcessTask],
+    *,
+    return_when: str = asyncio.ALL_COMPLETED,
+) -> tuple[set[_WaitForProcessTask], bool]:
+    done, pending = await asyncio.wait(pending, return_when=return_when)
+    failed = False
+    for task in done:
+        try:
+            _, returncode = task.result()
+        except Exception as exc:
+            traceback.print_exception(exc)
+            returncode = 1
+        if returncode:
+            failed = True
+    return pending, failed
 
 
 async def _async_main(args: argparse.Namespace, /) -> None:
@@ -37,23 +64,18 @@ async def _async_main(args: argparse.Namespace, /) -> None:
         entry.path for entry in os.scandir(os.path.join(args.run_dir, JOBS_DIR)) if entry.is_dir()
     ]
 
-    pending: set[asyncio.Task[tuple[asyncio.subprocess.Process, int]]] = set()
+    pending: set[_WaitForProcessTask] = set()
 
     max_parallel_jobs = args.max_parallel_jobs
     exit_code = 0
     for job_dir in job_dirs:
         while len(pending) >= max_parallel_jobs:
-            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-            for task in done:
-                try:
-                    proc, returncode = task.result()
-                except Exception as exc:
-                    traceback.print_exception(exc)
-                    returncode = 1
-                if returncode:
-                    exit_code = 1
+            pending, failed = await _wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            if failed:
+                exit_code = 1
         proc = await asyncio.create_subprocess_exec(
             sys.executable,
+            "-m",
             "red_install_tests.cmd.build",
             "--job-dir",
             job_dir,
@@ -61,6 +83,10 @@ async def _async_main(args: argparse.Namespace, /) -> None:
             *args.extra_packer_args,
         )
         pending.add(asyncio.create_task(_wait_for_process(proc)))
+
+    _, failed = await _wait(pending)
+    if failed:
+        exit_code = 1
 
     raise SystemExit(exit_code)
 
