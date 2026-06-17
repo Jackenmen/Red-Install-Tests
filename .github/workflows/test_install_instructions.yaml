@@ -79,6 +79,28 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v6
 
+      - name: Increase available disk space on the runner
+        # the below list was constructed based on `sudo ncdu /` output ran on the runner
+        run: |
+          find "$RUNNER_TOOL_CACHE" -type f -not -path "$RUNNER_TOOL_CACHE/.hatch/*" -delete
+          docker system prune -af
+          sudo rm -rf \
+              /opt/az \
+              /opt/google \
+              /opt/microsoft/msedge \
+              /usr/lib/firefox \
+              /usr/lib/google-cloud-sdk \
+              /usr/lib/jvm \
+              /usr/lib/llvm-* \
+              /usr/local/.ghcup \
+              /usr/local/julia* \
+              /usr/local/lib/android \
+              /usr/local/share/chromium \
+              /usr/share/az_* \
+              /usr/share/dotnet \
+              /usr/share/miniconda \
+              /usr/share/swift
+
       - name: Install Hatch
         uses: pypa/hatch@install
 
