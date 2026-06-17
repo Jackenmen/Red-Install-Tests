@@ -1,9 +1,12 @@
 # Red-Install-Tests
 
-The CI setup for running Red's [current stable installation instructions](https://docs.discord.red/en/stable/install_guides/index.html)
-and [installation instructions from `V3/develop` branch](https://docs.discord.red/en/latest/install_guides/index.html) daily.
+Test harness for running Red's installation instructions and tests in VMs based on the configuration provided by the Red's repo.
 
-This repo also allows for requesting builds for pending PRs on demand.
+This repository also contains the workflow files for running the harness on GitHub Actions.
+This includes:
+- setup for running Red's [current stable installation instructions](https://docs.discord.red/en/stable/install_guides/index.html) daily,
+- setup for running Red's [installation instructions from `V3/develop` branch](https://docs.discord.red/en/latest/install_guides/index.html) daily
+- on-demand builds for pending PRs
 
 ## Pre-requirements
 
