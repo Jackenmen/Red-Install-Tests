@@ -101,6 +101,9 @@ jobs:
               /usr/share/swift
           rm_cmd: rmz
 
+      - name: Print available disk space on the runner
+        run: df -h
+
       - name: Install Hatch
         uses: pypa/hatch@install
 
