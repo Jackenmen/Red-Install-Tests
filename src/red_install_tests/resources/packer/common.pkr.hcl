@@ -127,11 +127,11 @@ build {
       )
       inline = (
         provisioner.value.shell == "windows-shell"
-          ? [for cmd in provisioner.value.commands : "call ${cmd} || exit /b"]
+          ? [for cmd in provisioner.value.commands : "echo + ${cmd} && call ${cmd} || exit /b"]
           : (
             provisioner.value.shell == "shell"
-              ? concat(["set -eo pipefail"], provisioner.value.commands)
-              : provisioner.value.commands
+              ? concat(["set -xeo pipefail"], provisioner.value.commands)
+              : concat(["Set-PSDebug -Trace 1"], provisioner.value.commands)
           )
       )
       env = local.env_vars
