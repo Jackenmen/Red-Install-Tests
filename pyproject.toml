@@ -71,7 +71,7 @@ generate-job = [
 ]
 generate-run = [
     "generate-bare-run",
-    'create-job "*"',
+    'red-install-tests create-job --run-dir {root}{/}os-build-run "*"',
     "red-install-tests download-builder-requirements --deps-dir {root}{/}deps",
     "red-install-tests prepare-build-dir --run-dir {root}{/}os-build-run --all",
 ]
