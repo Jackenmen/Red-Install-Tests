@@ -131,7 +131,7 @@ build {
           : (
             provisioner.value.shell == "shell"
               ? concat(["set -xeo pipefail"], provisioner.value.commands)
-              : concat(["Set-PSDebug -Trace 1"], provisioner.value.commands)
+              : [for cmd in provisioner.value.commands : "echo --% ${cmd}\n${cmd}"]
           )
       )
       env = local.env_vars
