@@ -60,12 +60,12 @@ generate-bare-run = [
     "red-install-tests generate-os-matrix --run-dir {root}{/}os-build-run",
 ]
 generate-jobs = [
-    'create-job {args:"*"}',
+    'red-install-tests create-job --run-dir {root}{/}os-build-run {args:"*"}',
     "red-install-tests download-builder-requirements --deps-dir {root}{/}deps",
     "red-install-tests prepare-build-dir --run-dir {root}{/}os-build-run --all",
 ]
 generate-job = [
-    'create-job {args:"*"}',
+    'red-install-tests create-job --run-dir {root}{/}os-build-run --job-dir {root}{/}os-build-run {args}',
     "red-install-tests download-builder-requirements --deps-dir {root}{/}deps",
     "red-install-tests prepare-build-dir --job-dir {root}{/}os-build-run",
 ]
