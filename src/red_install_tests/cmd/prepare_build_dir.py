@@ -219,7 +219,10 @@ class QemuBuildDirGenerator(BuildDirGenerator):
         with open(os.path.join(self.build_dir, "cmdline.txt"), encoding="utf-8") as fp:
             kernel_cmdline = fp.read().strip()
         kernel_cmdline += (
+            # point at HTTP data source
             " ds=nocloud;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/"
+            # point at correct serial output to get the logs in Packer's QEMU logs
+            " console=ttyAMA1,115200 loglevel=8"
             f" network-config={base64.b64encode(yaml.dump(network_config).encode()).decode()}"
         )
         extra_qemu_args = [
