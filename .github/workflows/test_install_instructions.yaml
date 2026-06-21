@@ -12,6 +12,8 @@ on:
         type: string
       pull-request:
         type: number
+      image-name-patterns:
+        type: string
   workflow_call:
     inputs:
       repo:
@@ -23,6 +25,8 @@ on:
         type: string
       pull-request:
         type: number
+      image-name-patterns:
+        type: string
 
 jobs:
   generate-matrix:
@@ -47,8 +51,10 @@ jobs:
           INPUTS_BRANCH: ${{ inputs.branch }}
           INPUTS_VERSION: ${{ inputs.version }}
           INPUTS_PULL_REQUEST: ${{ inputs.pull-request }}
+          INPUTS_IMAGE_NAME_PATTERNS: ${{ inputs.image-name-patterns }}
         run: |
-          hatch run generate-bare-run \
+          read -ra patterns <<< "$INPUTS_IMAGE_NAME_PATTERNS"
+          hatch run generate-bare-run "${patterns[@]}" \
             --repo "$INPUTS_REPO" \
             --branch "$INPUTS_BRANCH" \
             --version "$INPUTS_VERSION" \
