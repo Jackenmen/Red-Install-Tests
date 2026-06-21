@@ -71,6 +71,7 @@ jobs:
     runs-on: >-
       ${{ case(
           matrix.image_spec.os == 'darwin', 'macos-latest',
+          matrix.image_spec.name == 'ubuntu-2404-arm-raspi', 'ubuntu-24.04-arm',
           matrix.image_spec.arch == 'aarch64', 'ubuntu-26.04-arm',
           'ubuntu-26.04'
       ) }}
