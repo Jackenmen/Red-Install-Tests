@@ -320,10 +320,17 @@ def prepare_build_dir(
     generator = generator_cls(run_config, job_config, job_dir, deps_dir=deps_dir)
 
     if os.path.exists(generator.build_dir):
-        if ignore_existing:
+        if isinstance(generator, QemuBuildDirGenerator) and not os.path.exists(
+            generator.image_path
+        ):
+            print(
+                "Build dir already exists but does not contain the system image,"
+                " removing before proceeding..."
+            )
+        elif ignore_existing:
             print("Build dir already exists, skipped.")
             return
-        if not override:
+        elif not override:
             raise RuntimeError(
                 "cannot override an existing build directory when --override flag is not specified"
             )
