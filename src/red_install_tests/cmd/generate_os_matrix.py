@@ -1,4 +1,5 @@
 import argparse
+import fnmatch
 import itertools
 import json
 import os
@@ -39,6 +40,7 @@ def prompt_has_modifier(prompt: dict[str, Any], modifier: str):
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     add_run_dir_option(parser)
+    parser.add_argument("patterns", metavar="pattern", nargs="*", default=["*"])
     parser.set_defaults(func=main)
 
 
@@ -99,6 +101,8 @@ def _process_commands(commands: list[str]) -> None:
 def main(args: argparse.Namespace, /) -> None:
     red_repo_dir = os.path.join(args.run_dir, "repos", "Red-DiscordBot")
     matrix = []
+    patterns = set(args.patterns)
+    found_patterns = set()
     with tempfile.TemporaryDirectory() as tmpdirname:
         venv_dir = os.path.join(tmpdirname, "venv")
         subprocess.check_call((sys.executable, "-m", "venv", venv_dir))
@@ -129,11 +133,25 @@ def main(args: argparse.Namespace, /) -> None:
 
             install_instructions = _process_prompts(data["prompts"])
             for image_name, location in data["os_image_locations"].items():
+                skip = True
+                for pat in patterns:
+                    if fnmatch.fnmatch(image_name, pat):
+                        found_patterns.add(pat)
+                        skip = False
+                if skip:
+                    continue
                 print(f"Processing {image_name} image...")
                 location["name"] = image_name
                 spec = generate_image_spec(location)
                 job_config = JobConfig(image_spec=spec, install_instructions=install_instructions)
                 matrix.append(job_config.to_json_dict())
+
+        missing_patterns = set(patterns) - found_patterns
+        if missing_patterns:
+            raise ValueError(
+                "Could not find images matching the following patterns in the OS matrix:"
+                f" {', '.join(missing_patterns)}"
+            )
 
         with open(os.path.join(args.run_dir, OS_MATRIX_FILENAME), "w", encoding="utf-8") as fp:
             json.dump(matrix, fp, separators=(",", ":"))
