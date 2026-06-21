@@ -4,9 +4,9 @@ Test harness for running Red's installation instructions and tests in VMs based 
 
 This repository also contains the workflow files for running the harness on GitHub Actions.
 This includes:
-- setup for running Red's [current stable installation instructions](https://docs.discord.red/en/stable/install_guides/index.html) daily,
-- setup for running Red's [installation instructions from `V3/develop` branch](https://docs.discord.red/en/latest/install_guides/index.html) daily
-- on-demand builds for pending PRs
+- setup for running Red's [current stable installation instructions](https://docs.discord.red/en/stable/install_guides/index.html) daily (`scheduled_test.yaml` workflow),
+- setup for running Red's [installation instructions from `V3/develop` branch](https://docs.discord.red/en/latest/install_guides/index.html) daily (`scheduled_test.yaml` workflow),
+- on-demand builds for pending PRs and other branches (`test_install_instructions.yaml` workflow)
 
 ## Pre-requirements
 

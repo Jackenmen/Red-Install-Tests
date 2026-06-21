@@ -1,0 +1,19 @@
+name: Daily install tests
+
+on:
+  schedule:
+    - cron: '12 15 * * *'
+    - cron: '3 17 * * *'
+
+jobs:
+  test_stable_install_instructions:
+    name: Test stable install instructions
+    uses: ./.github/workflows/test_install_instructions.yaml
+    if: github.event.schedule == '12 15 * * *'
+
+  test_dev_install_instructions:
+    name: Test dev install instructions
+    uses: ./.github/workflows/test_install_instructions.yaml
+    if: github.event.schedule == '3 17 * * *'
+    with:
+      branch: V3/develop
