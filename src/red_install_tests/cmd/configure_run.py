@@ -2,13 +2,14 @@ import argparse
 import json
 import os
 
-from red_install_tests.cli import add_run_dir_option, parser_spec, run
+from red_install_tests.cli import add_name_patterns_argument, add_run_dir_option, parser_spec, run
 from red_install_tests.run_config import RUN_CONFIG_FILENAME, RunConfig
 
 
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     add_run_dir_option(parser)
+    add_name_patterns_argument(parser)
     parser.add_argument("--repo", default="Cog-Creators/Red-DiscordBot")
     ref_group = parser.add_mutually_exclusive_group()
     ref_group.add_argument("--branch", default="")
@@ -26,7 +27,7 @@ def main(args: argparse.Namespace, /) -> None:
         ref = f"refs/tags/{args.version}"
     elif args.pull_request:
         ref = f"refs/pull/{args.pull_request}/merge"
-    run_config = RunConfig(repo_url=repo_url, ref=ref)
+    run_config = RunConfig(repo_url=repo_url, ref=ref, patterns=args.patterns)
 
     os.makedirs(args.run_dir, exist_ok=True)
     with open(os.path.join(args.run_dir, RUN_CONFIG_FILENAME), "w", encoding="utf-8") as fp:

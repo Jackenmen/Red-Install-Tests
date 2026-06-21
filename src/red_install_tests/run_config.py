@@ -14,19 +14,21 @@ STABLE_PACKAGE_SPEC: Final = "Red-DiscordBot[postgres]"
 class RunConfigDict(TypedDict):
     repo_url: str
     ref: str | None
+    patterns: list[str]
 
 
 @dataclasses.dataclass(kw_only=True)
 class RunConfig:
     repo_url: str
     ref: str | None
+    patterns: list[str]
 
     @classmethod
     def from_json_dict(cls, data: RunConfigDict) -> Self:
-        return cls(repo_url=data["repo_url"], ref=data["ref"])
+        return cls(repo_url=data["repo_url"], ref=data["ref"], patterns=data["patterns"])
 
     def to_json_dict(self) -> RunConfigDict:
-        return {"repo_url": self.repo_url, "ref": self.ref}
+        return {"repo_url": self.repo_url, "ref": self.ref, "patterns": self.patterns}
 
     @property
     def pinned_tag(self) -> str | None:

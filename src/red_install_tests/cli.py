@@ -37,3 +37,7 @@ def add_job_dir_option(parser: argparse.ArgumentParser, *, with_default: bool = 
 
 def add_deps_dir_option(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--deps-dir", "--depsdir", default=os.path.join(os.getcwd(), "deps"))
+
+
+def add_name_patterns_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("patterns", metavar="pattern", nargs="*")

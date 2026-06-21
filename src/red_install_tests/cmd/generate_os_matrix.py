@@ -9,10 +9,10 @@ import sysconfig
 import tempfile
 from typing import Any, Final
 
-from red_install_tests.cli import add_run_dir_option, parser_spec, run
+from red_install_tests.cli import add_name_patterns_argument, add_run_dir_option, parser_spec, run
 from red_install_tests.image_location import generate_image_spec
 from red_install_tests.job_config import CmdBlockDict, JobConfig, ShellType
-from red_install_tests.run_config import OS_MATRIX_FILENAME
+from red_install_tests.run_config import OS_MATRIX_FILENAME, get_run_config
 
 _LANGUAGE_TO_SHELL: Final[dict[str, ShellType]] = {
     "bash": "shell",
@@ -40,7 +40,7 @@ def prompt_has_modifier(prompt: dict[str, Any], modifier: str):
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     add_run_dir_option(parser)
-    parser.add_argument("patterns", metavar="pattern", nargs="*", default=["*"])
+    add_name_patterns_argument(parser)
     parser.set_defaults(func=main)
 
 
@@ -101,7 +101,8 @@ def _process_commands(commands: list[str]) -> None:
 def main(args: argparse.Namespace, /) -> None:
     red_repo_dir = os.path.join(args.run_dir, "repos", "Red-DiscordBot")
     matrix = []
-    patterns = set(args.patterns)
+    run_config = get_run_config(args.run_dir)
+    patterns = set(args.patterns or run_config.patterns or ["*"])
     found_patterns = set()
     with tempfile.TemporaryDirectory() as tmpdirname:
         venv_dir = os.path.join(tmpdirname, "venv")
