@@ -122,6 +122,13 @@ def apply_dtb_config(
         shutil.move(base_dtb_file, output_dtb_file)
         return
 
+    # display does not work in QEMU when VC4 driver is enabled so just skip it
+    with open(config_file, "r+", encoding="utf-8") as fp:
+        content = fp.read()
+        fp.seek(0)
+        fp.write(re.sub(r"^dtoverlay=vc4-kms-v3d($|,.+$)", "", content, flags=re.MULTILINE))
+        fp.truncate()
+
     subprocess.check_call(
         (
             sys.executable,
