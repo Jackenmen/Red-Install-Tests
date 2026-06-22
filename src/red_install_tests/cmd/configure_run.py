@@ -6,6 +6,18 @@ from red_install_tests.cli import add_name_patterns_argument, add_run_dir_option
 from red_install_tests.run_config import RUN_CONFIG_FILENAME, RunConfig
 
 
+def parse_pr_number(arg: str) -> int:
+    if not arg:
+        return 0
+    try:
+        x = int(arg)
+    except ValueError:
+        raise argparse.ArgumentTypeError("The argument has to be a number.") from None
+    if x >= 0:
+        return x
+    raise argparse.ArgumentTypeError("The PR number has to be a positive integer.")
+
+
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     add_run_dir_option(parser)
@@ -14,7 +26,7 @@ def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     ref_group = parser.add_mutually_exclusive_group()
     ref_group.add_argument("--branch", default="")
     ref_group.add_argument("--version", default="")
-    ref_group.add_argument("--pull-request", "--pull", "--pr", default="")
+    ref_group.add_argument("--pull-request", "--pull", "--pr", type=parse_pr_number, default=0)
     parser.set_defaults(func=main)
 
 
