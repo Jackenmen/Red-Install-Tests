@@ -1,0 +1,12 @@
+name: Daily install tests - dev
+
+on:
+  schedule:
+    - cron: '3 17 * * *'
+
+jobs:
+  test_dev_install_instructions:
+    name: Test dev install instructions
+    uses: ./.github/workflows/test_install_instructions.yaml
+    with:
+      branch: V3/develop

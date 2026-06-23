@@ -1,0 +1,10 @@
+name: Daily install tests - stable
+
+on:
+  schedule:
+    - cron: '12 15 * * *'
+
+jobs:
+  test_stable_install_instructions:
+    name: Test stable install instructions
+    uses: ./.github/workflows/test_install_instructions.yaml
