@@ -5,8 +5,7 @@ import tarfile
 from io import BytesIO
 from urllib.parse import urlsplit
 
-import niquests
-
+from red_install_tests import http
 from red_install_tests.cli import add_run_dir_option, parser_spec, run
 from red_install_tests.run_config import get_run_config
 
@@ -33,8 +32,7 @@ def main(args: argparse.Namespace, /) -> None:
 
     ref = run_config.ref
     if not ref:
-        resp = niquests.head(f"{run_config.repo_url}/releases/latest", allow_redirects=True)
-        resp.raise_for_status()
+        resp = http.head(f"{run_config.repo_url}/releases/latest", allow_redirects=True)
         latest_tag = urlsplit(resp.url or "").path.rsplit("/", 1)[1]
         ref = f"refs/tags/{latest_tag}"
 
@@ -42,7 +40,7 @@ def main(args: argparse.Namespace, /) -> None:
     if os.path.exists(repo_dir):
         shutil.rmtree(repo_dir)
 
-    r = niquests.get(f"{run_config.repo_url}/tarball/{ref}").raise_for_status()
+    r = http.get(f"{run_config.repo_url}/tarball/{ref}")
     with tarfile.open(fileobj=BytesIO(r.content or b"")) as archive:
         setattr(archive, "extraction_filter", top_level_dir_filter)
         archive.extractall(repo_dir)

@@ -16,6 +16,7 @@ from urllib.parse import urlsplit
 import niquests
 from typing_extensions import Self
 
+from red_install_tests import http
 from red_install_tests.cli import add_deps_dir_option, parser_spec, run
 from red_install_tests.job_config import get_host_architecture
 from red_install_tests.resources import RESOURCES
@@ -107,7 +108,7 @@ class Downloader(_DownloaderBase):
             extractor = os.path.join(tmpdirname, "7zr.exe")
             url = SW_7ZIP_BASE_URL % "7zr.exe"
             print(f"Fetching {url}...")
-            r = _verify_hash(niquests.get(url).raise_for_status())
+            r = _verify_hash(http.get(url))
             with open(extractor, "wb") as fp:
                 fp.writelines(r.iter_content())
 
@@ -115,7 +116,7 @@ class Downloader(_DownloaderBase):
             installer = os.path.join(tmpdirname, "7z-installer.exe")
             url = SW_7ZIP_BASE_URL % f"{base_filename}{plat}.exe"
             print(f"Fetching {url}...")
-            r = _verify_hash(niquests.get(url).raise_for_status())
+            r = _verify_hash(http.get(url))
             with open(installer, "wb") as fp:
                 fp.writelines(r.iter_content())
 
@@ -138,7 +139,7 @@ class Downloader(_DownloaderBase):
                 raise RuntimeError(f"{platform_key} platform is not supported")
         url = SW_7ZIP_BASE_URL % filename
         print(f"Fetching {url}...")
-        r = _verify_hash(niquests.get(url).raise_for_status())
+        r = _verify_hash(http.get(url))
         with tarfile.open(fileobj=BytesIO(r.content or b"")) as archive:
             setattr(archive, "extraction_filter", getattr(tarfile, "data_filter", None))
             archive.extract("7zz", self.bin_dir)
@@ -168,7 +169,7 @@ class Downloader(_DownloaderBase):
         with tempfile.TemporaryDirectory() as tmpdirname:
             print(f"Fetching {url}...")
             deb_file = os.path.join(tmpdirname, "package.deb")
-            r = _verify_hash(niquests.get(url).raise_for_status())
+            r = _verify_hash(http.get(url))
             with open(deb_file, "wb") as fp:
                 fp.writelines(r.iter_content())
 
@@ -235,7 +236,7 @@ class Downloader(_DownloaderBase):
 
         url = SW_PACKER_BASE_URL % platform_key
         print(f"Fetching {url}...")
-        r = _verify_hash(niquests.get(url).raise_for_status())
+        r = _verify_hash(http.get(url))
 
         with zipfile.ZipFile(BytesIO(r.content or b"")) as archive:
             if IS_WINDOWS:
@@ -255,7 +256,7 @@ class Downloader(_DownloaderBase):
 
         url = SW_RPI_UTILS_BASE_URL % (os_name, arch)
         print(f"Fetching {url}...")
-        r = _verify_hash(niquests.get(url).raise_for_status())
+        r = _verify_hash(http.get(url))
 
         with zipfile.ZipFile(BytesIO(r.content or b"")) as archive:
             for filename in ("dtapply", "dtmerge.exe" if IS_WINDOWS else "dtmerge"):
@@ -271,7 +272,7 @@ class Downloader(_DownloaderBase):
 
         url = SW_TART_BASE_URL
         print(f"Fetching {url}...")
-        r = _verify_hash(niquests.get(url).raise_for_status())
+        r = _verify_hash(http.get(url))
 
         with tarfile.open(fileobj=BytesIO(r.content or b"")) as archive:
             setattr(archive, "extraction_filter", getattr(tarfile, "data_filter", None))
@@ -286,7 +287,7 @@ class Downloader(_DownloaderBase):
 
         url = SW_VIRTIO_WIN_DRIVERS_URL
         print(f"Fetching {url}...")
-        r = _verify_hash(niquests.get(url).raise_for_status())
+        r = _verify_hash(http.get(url))
 
         with zipfile.ZipFile(BytesIO(r.content or b"")) as archive:
             for os_name in ("Win10", "Win11"):

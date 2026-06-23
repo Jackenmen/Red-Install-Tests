@@ -8,6 +8,7 @@ import niquests
 import rich.progress
 from platformdirs import user_cache_dir
 
+from red_install_tests import http
 from red_install_tests.cli import add_job_dir_option, parser_spec, run
 from red_install_tests.image_location import DiskImageSpec
 from red_install_tests.job_config import get_job_config
@@ -52,15 +53,12 @@ def _cache_image(image_spec: DiskImageSpec, cache_dir: str) -> None:
             "•",
             rich.progress.TimeRemainingColumn(),
         ) as progress,
-        niquests.Session(timeout=15, retries=10) as session,
     ):
-        r = session.get(image_spec["url"], stream=True).raise_for_status()
+        r = http.get(image_spec["url"], stream=True)
         # download progress requires content length but it is not always present
         content_length = int(
             r.headers.get("content-length")
-            or session.head(image_spec["url"], allow_redirects=True)
-            .raise_for_status()
-            .headers["content-length"]
+            or http.head(image_spec["url"], allow_redirects=True).headers["content-length"]
         )
         progress_task = progress.add_task("Downloading the image...")
         for chunk in r.iter_content():

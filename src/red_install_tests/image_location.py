@@ -2,9 +2,10 @@ import re
 from typing import Any, Final, Literal
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
-import niquests
 from lxml import etree
 from typing_extensions import NotRequired, ReadOnly, TypedDict
+
+from . import http
 
 DEFAULT_JAVA_VERSION: Final = 25
 DEFAULT_IMAGE_FORMAT: Final = "qcow2"
@@ -164,7 +165,7 @@ def _create_disk_image_spec(
 
 def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation) -> DiskImageSpec:
     url = location["url"]
-    r = niquests.get(url, retries=5).raise_for_status()
+    r = http.get(url)
     checksum_type = location.get("checksum_type", "sha256")
     checksum_style = location.get("checksum_style", "gnu")
     checksum_pattern = _GNU_CHECKSUM_PATTERN if checksum_style == "gnu" else _BSD_CHECKSUM_PATTERN
@@ -222,7 +223,7 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
     url = location["url"]
     checksum_type = location.get("checksum_type", "sha256")
 
-    r = niquests.get(url, retries=5).raise_for_status()
+    r = http.get(url)
     if not r.text:
         raise RuntimeError(f"could not decode response from URL: {url}")
     root = etree.HTML(r.text)
