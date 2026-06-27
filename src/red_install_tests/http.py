@@ -2,9 +2,9 @@ import niquests
 from urllib3 import Retry, Timeout
 
 session = niquests.Session(
-    timeout=Timeout(connect=15, read=30),
+    timeout=Timeout(connect=30, read=30),
     retries=Retry(
-        connect=5,
+        connect=8,
         read=3,
         other=3,
         backoff_factor=0.2,
