@@ -126,6 +126,7 @@ jobs:
       - name: Download builder requirements (Linux)
         if: runner.os == 'Linux'
         run: |
+          sudo apt-get update
           sudo apt-get install qemu-system xorriso
           # `usermod -aG "$USER" kvm` doesn't seem to be enough so just chown it...
           if [[ -e /dev/kvm ]]; then
