@@ -21,7 +21,7 @@ from red_install_tests.cli import add_deps_dir_option, parser_spec, run
 from red_install_tests.job_config import get_host_architecture
 from red_install_tests.resources import RESOURCES
 
-SW_7ZIP_VERSION: Final = "26.01"
+SW_7ZIP_VERSION: Final = "26.03"
 SW_AAVMF_VERSION: Final = "2022.11-6+deb12u2"
 SW_OVMF_VERSION: Final = "2022.11-6+deb12u2"
 SW_PACKER_VERSION: Final = "1.15.3"
