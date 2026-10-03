@@ -53,11 +53,12 @@ def extract_boot_partition(img_file: StrPath, boot_partition_dir: StrPath) -> No
 def apply_dtb_config(
     *,
     boot_partition_dir: StrPath,
+    os_files_dir: StrPath,
     output_dir: StrPath,
     model: RaspberryPiModel,
 ) -> None:
     config_file = os.path.join(boot_partition_dir, CONFIG_FILENAME)
-    base_dtb_file = os.path.join(boot_partition_dir, DTB_FILENAMES[model])
+    base_dtb_file = os.path.join(os_files_dir, DTB_FILENAMES[model])
     output_dtb_file = os.path.join(output_dir, "output.dtb")
 
     mode = os.F_OK
@@ -83,7 +84,7 @@ def apply_dtb_config(
             "--output",
             output_dtb_file,
             "--overlays-dir",
-            os.path.join(boot_partition_dir, "overlays"),
+            os.path.join(os_files_dir, "overlays"),
             base_dtb_file,
             config_file,
         )
@@ -107,15 +108,13 @@ def main(args: argparse.Namespace, /) -> None:
 
         convert_image(args.img_file, img_file)
         extract_boot_partition(img_file, boot_partition_dir)
-        apply_dtb_config(
-            boot_partition_dir=boot_partition_dir, output_dir=args.output_dir, model=args.model
-        )
 
         arm_64bit = args.model == MODEL_RASPI4B
         kernel_filename = None
         initrd_filename = None
         auto_initramfs = False
         cmdline_filename = "cmdline.txt"
+        os_prefix = ""
         with open(os.path.join(boot_partition_dir, CONFIG_FILENAME), encoding="utf-8") as fp:
             active = True
             for raw in fp:
@@ -138,7 +137,7 @@ def main(args: argparse.Namespace, /) -> None:
                 # dtparam / dtoverlay
                 m = re.match(
                     r"^(?:"
-                    r"(arm_64bit|auto_initramfs|kernel|cmdline)\s*=\s*(.*)"
+                    r"(arm_64bit|auto_initramfs|kernel|cmdline|os_prefix)\s*=\s*(.*)"
                     r"|(initramfs)\s+(\S+)\s+followkernel"
                     r")",
                     line,
@@ -158,8 +157,20 @@ def main(args: argparse.Namespace, /) -> None:
                     kernel_filename = value
                 elif option_name == "cmdline":
                     cmdline_filename = value
+                elif option_name == "os_prefix":
+                    os_prefix = value
                 else:
                     initrd_filename = value
+
+        os_files_dir = (
+            os.path.join(boot_partition_dir, os_prefix) if os_prefix else boot_partition_dir
+        )
+        apply_dtb_config(
+            boot_partition_dir=boot_partition_dir,
+            os_files_dir=os_files_dir,
+            output_dir=args.output_dir,
+            model=args.model,
+        )
 
         if kernel_filename is None:
             if arm_64bit:
@@ -173,7 +184,7 @@ def main(args: argparse.Namespace, /) -> None:
             initrd_filename = re.sub("^kernel", "initramfs", kernel_filename, count=1)
             initrd_filename, _, _ = initrd_filename.rpartition(".")
 
-        with open(os.path.join(boot_partition_dir, cmdline_filename), encoding="utf-8") as fp:
+        with open(os.path.join(os_files_dir, cmdline_filename), encoding="utf-8") as fp:
             cmdline = fp.read().strip()
 
         with open(os.path.join(args.output_dir, "cmdline.txt"), "w", encoding="utf-8") as fp:
@@ -184,12 +195,12 @@ def main(args: argparse.Namespace, /) -> None:
         print("Kernel cmdline:", cmdline)
 
         shutil.move(
-            os.path.join(boot_partition_dir, kernel_filename),
+            os.path.join(os_files_dir, kernel_filename),
             os.path.join(args.output_dir, "kernel.img"),
         )
         if initrd_filename is not None:
             shutil.move(
-                os.path.join(boot_partition_dir, initrd_filename),
+                os.path.join(os_files_dir, initrd_filename),
                 os.path.join(args.output_dir, "initrd.img"),
             )
 
