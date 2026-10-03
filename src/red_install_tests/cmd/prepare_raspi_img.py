@@ -1,12 +1,11 @@
 import argparse
-import ctypes
 import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-from typing import ClassVar, Final, Literal
+from typing import Final, Literal
 
 from red_install_tests.cli import parser_spec, run
 
@@ -20,40 +19,6 @@ DTB_FILENAMES: Final[dict[RaspberryPiModel, str]] = {
     MODEL_RASPI4B: "bcm2711-rpi-4-b.dtb",
 }
 CONFIG_FILENAME: Final = "config.txt"
-
-
-class CHSAddress(ctypes.LittleEndianStructure):
-    _layout_ = "ms"
-    _pack_ = 1
-    _fields_: ClassVar = [
-        ("head", ctypes.c_uint8),
-        ("sector", ctypes.c_uint8, 6),
-        ("cylinder", ctypes.c_uint16, 10),
-    ]
-
-    def __bool__(self) -> bool:
-        return any((self.head, self.sector, self.cylinder))
-
-
-class PartitionEntry(ctypes.LittleEndianStructure):
-    _layout_ = "ms"
-    _pack_ = 1
-    _fields_: ClassVar = [
-        ("boot_indicator", ctypes.c_uint8),
-        ("start_chs", CHSAddress),
-        ("partition_type", ctypes.c_uint8),
-        ("end_chs", CHSAddress),
-        ("start_lba", ctypes.c_uint32),
-        ("end_lba", ctypes.c_uint32),
-    ]
-
-    def __bool__(self) -> bool:
-        return self.partition_type != 0
-
-
-PartitionTable: Final = PartitionEntry * 4
-PARTITION_TABLE_OFFSET: Final = 446
-MBR_SIZE: Final = 512
 
 
 def section_applies(section: str, model: str) -> bool:
@@ -71,24 +36,6 @@ def section_applies(section: str, model: str) -> bool:
 
 def convert_image(src: StrPath, dst: StrPath) -> None:
     subprocess.check_call(("qemu-img", "convert", "-O", "raw", src, dst))
-
-
-def fix_partition_table(img_file: StrPath) -> None:
-    with open(img_file, "r+b") as fp:
-        partition_table = PartitionTable.from_buffer_copy(
-            fp.read(MBR_SIZE), PARTITION_TABLE_OFFSET
-        )
-        modified = False
-        for partition in partition_table:
-            if not partition or partition.start_chs or partition.end_chs:
-                # empty partition entry or CHS already exists
-                continue
-            partition.start_chs = CHSAddress(254, 63, 1023)
-            partition.end_chs = CHSAddress(254, 63, 1023)
-            modified = True
-        if modified:
-            fp.seek(PARTITION_TABLE_OFFSET)
-            fp.write(partition_table)
 
 
 def extract_boot_partition(img_file: StrPath, boot_partition_dir: StrPath) -> None:
@@ -159,7 +106,6 @@ def main(args: argparse.Namespace, /) -> None:
         img_file = os.path.join(tmpdirname, "system.img")
 
         convert_image(args.img_file, img_file)
-        fix_partition_table(img_file)
         extract_boot_partition(img_file, boot_partition_dir)
         apply_dtb_config(
             boot_partition_dir=boot_partition_dir, output_dir=args.output_dir, model=args.model
