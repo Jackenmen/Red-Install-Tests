@@ -1,4 +1,14 @@
 name: Test install instructions
+run-name: >-
+  ${{ inputs.repo }} - Validate
+  ${{
+    case(
+      inputs.branch != '', format('branch {0}', inputs.branch),
+      inputs.version != '', format('release {0}', inputs.version),
+      inputs.pull-request != 0, format('PR {0}', inputs.pull-request),
+      'latest stable release'
+    )
+  }}
 
 on:
   workflow_dispatch:
