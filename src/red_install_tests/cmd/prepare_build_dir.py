@@ -63,6 +63,10 @@ def _generate_cloud_init(public_key: str) -> dict[str, str]:
                 "ssh_authorized_keys": [public_key],
             },
         ],
+        "ntp": {
+            "pools": ["pool.ntp.org"],
+            "servers": ["time.cloudflare.com", "time.google.com"],
+        },
     }
     return {"user-data": f"#cloud-config\n{yaml.dump(user_data)}", "meta-data": ""}
 
