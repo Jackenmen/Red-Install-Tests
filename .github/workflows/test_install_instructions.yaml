@@ -64,6 +64,19 @@ jobs:
           (echo -n 'run-config=' && cat os-build-run/run_config.json && echo) >> "$GITHUB_OUTPUT"
           (echo -n 'os-matrix=' && jq -c '. | map(select(.image_spec.os != "darwin"))' os-build-run/os_matrix.json) >> "$GITHUB_OUTPUT"
 
+      - name: Add run configuration to workflow summary
+        run: |
+          echo '# Job parameters' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo -n '- Repo URL: ' >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.repo_url' os-build-run/run_config.json >> "$GITHUB_STEP_SUMMARY"
+          echo -n '- Ref: `' >> "$GITHUB_STEP_SUMMARY"
+          jq -j '.ref' os-build-run/run_config.json >> "$GITHUB_STEP_SUMMARY"
+          echo '`' >> "$GITHUB_STEP_SUMMARY"
+          echo -n '- Patterns: `' >> "$GITHUB_STEP_SUMMARY"
+          jq -j '.patterns | join(" ") | select(. != "") // " "' os-build-run/run_config.json >> "$GITHUB_STEP_SUMMARY"
+          echo '`' >> "$GITHUB_STEP_SUMMARY"
+
   test-install-instructions:
     name: ${{ matrix.image_spec.name }} - Test install instructions
     needs: generate-matrix
