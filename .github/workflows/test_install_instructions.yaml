@@ -122,6 +122,35 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v6
 
+      - name: Prepare job directory
+        env:
+          RUN_CONFIG: ${{ needs.generate-matrix.outputs.run-config }}
+          JOB_CONFIG: ${{ toJSON(matrix) }}
+        run: |
+          mkdir os-build-run
+          echo "$RUN_CONFIG" > os-build-run/run_config.json
+          echo "$JOB_CONFIG" > os-build-run/job_config.json
+
+      - name: Add job information to workflow summary
+        run: |
+          echo '# Job information' >> "$GITHUB_STEP_SUMMARY"
+
+          echo '## Image spec' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          jq '.image_spec' os-build-run/job_config.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          echo '## Install instructions' >> "$GITHUB_STEP_SUMMARY"
+          echo '```console' >> "$GITHUB_STEP_SUMMARY"
+          jq -r '
+            .install_instructions[]
+              | .elevated as $elevated
+              | .commands[]
+              | "\(if $elevated then "#" else "$" end) \(.)"
+            ' \
+            os-build-run/job_config.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Increase available disk space on the runner
         uses: endersonmenezes/free-disk-space@7901478139cff6e9d44df5972fd8ab8fcade4db1 # v3.2.2
         with:
@@ -149,15 +178,6 @@ jobs:
 
       - name: Install Hatch
         uses: pypa/hatch@install
-
-      - name: Prepare job directory
-        env:
-          RUN_CONFIG: ${{ needs.generate-matrix.outputs.run-config }}
-          JOB_CONFIG: ${{ toJSON(matrix) }}
-        run: |
-          mkdir os-build-run
-          echo "$RUN_CONFIG" > os-build-run/run_config.json
-          echo "$JOB_CONFIG" > os-build-run/job_config.json
 
       - name: Download builder requirements (Linux)
         if: runner.os == 'Linux'
