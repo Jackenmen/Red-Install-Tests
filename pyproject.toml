@@ -77,7 +77,7 @@ generate-run = [
 ]
 
 [tool.hatch.envs.hatch-check-types]
-dependencies = ["ty", "Red-DiscordBot", "setuptools", "types-lxml"]
+dependencies = ["ty", "setuptools", "types-lxml"]
 
 [tool.hatch.envs.hatch-check-types.scripts]
 check = "ty check"
@@ -167,3 +167,9 @@ explicit-preview-rules = true
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
+
+[[tool.ty.overrides]]
+include = ["src/red_install_tests/resources/tests/*.py"]
+
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"

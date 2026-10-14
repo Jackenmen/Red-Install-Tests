@@ -106,7 +106,8 @@ def main(args: argparse.Namespace, /) -> None:
     found_patterns = set()
     with tempfile.TemporaryDirectory() as tmpdirname:
         venv_dir = os.path.join(tmpdirname, "venv")
-        subprocess.check_call((sys.executable, "-m", "venv", venv_dir))
+        red_python_executable = os.getenv("RED_PYTHON_EXECUTABLE") or sys.executable
+        subprocess.check_call((red_python_executable, "-m", "venv", venv_dir))
         scripts_dir = _get_scripts_dir(venv_dir)
         venv_python = os.path.join(scripts_dir, "python" + sysconfig.get_config_var("EXE"))
         subprocess.check_call((venv_python, "-m", "pip", "install", "-U", "pip"))
