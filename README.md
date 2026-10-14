@@ -10,7 +10,7 @@ This includes:
 
 ## Pre-requirements
 
-- Python 3.10
+- Python 3.14
 - [Hatch](https://hatch.pypa.io/latest/install/)
 - [QEMU](https://www.qemu.org/download/)
 - On Linux, you might need to manually install [xorriso](https://www.gnu.org/software/xorriso/)

@@ -7,14 +7,14 @@ name = "Red-Install-Tests"
 dynamic = ["version"]
 description = "Test harness for running Red's installation instructions."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 license = "MIT"
 authors = [
     { name = "Jakub Kuczys", email = "me@jacken.men" },
 ]
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
@@ -39,7 +39,7 @@ Source = "https://github.com/Jackenmen/Red-Install-Tests"
 source = "vcs"
 
 [tool.hatch.envs.default]
-python = "3.10"
+python = "3.14"
 
 [tool.hatch.envs.default.env-vars]
 PATH = "{root}{/}deps{/}bin{;}{env:PATH}"
