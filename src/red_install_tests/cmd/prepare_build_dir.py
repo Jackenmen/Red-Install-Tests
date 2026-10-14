@@ -139,6 +139,15 @@ def _generate_cloud_init(public_key: str, *, image_name: str) -> dict[str, str]:
     # - Rocky: https://github.com/canonical/cloud-init/pull/5864
     if image_name.startswith(("fedora-43", "fedora-44", "rocky-linux-8")):
         user_data["ntp"]["config"]["service_name"] = "chronyd"
+    if image_name.startswith("amazon-linux-2023"):
+        user_data["write_files"].append(
+            {
+                "path": "/run/chrony.d/.configured",
+                "content": "",
+                "owner": "root:root",
+                "permissions": "0644",
+            }
+        )
     return {"user-data": f"#cloud-config\n{yaml.dump(user_data)}", "meta-data": ""}
 
 
