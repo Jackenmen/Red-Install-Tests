@@ -3,10 +3,12 @@ import hashlib
 import lzma
 import os
 import shutil
+import time
 
-import niquests
+import pyhaul
 import rich.progress
 from platformdirs import user_cache_dir
+from pyhaul.transport.types import TransportRequestOptions
 
 from red_install_tests import http
 from red_install_tests.cli import add_job_dir_option, parser_spec, run
@@ -36,12 +38,10 @@ def _cache_image(image_spec: DiskImageSpec, cache_dir: str) -> None:
     os.makedirs(cache_dir, exist_ok=True)
 
     hash_name, _, expected_hash = image_spec["checksum"].partition(":")
-    h = hashlib.new(hash_name)
 
     destination = os.path.join(cache_dir, CACHED_IMAGE_NAME)
     download_destination = f"{destination}.download.tmp"
     with (
-        open(download_destination, "wb") as fp,
         rich.progress.Progress(
             rich.progress.TextColumn("[bold blue]{task.description}", justify="right"),
             rich.progress.BarColumn(bar_width=None),
@@ -54,24 +54,66 @@ def _cache_image(image_spec: DiskImageSpec, cache_dir: str) -> None:
             rich.progress.TimeRemainingColumn(),
         ) as progress,
     ):
-        r = http.get(image_spec["url"], stream=True)
-        # download progress requires content length but it is not always present
-        content_length = int(
-            r.headers.get("content-length")
-            or http.head(image_spec["url"], allow_redirects=True).headers["content-length"]
-        )
         progress_task = progress.add_task("Downloading the image...")
-        for chunk in r.iter_content():
-            if r.download_progress is None:
-                r.download_progress = niquests.models.TransferProgress()
-            fp.write(chunk)
-            h.update(chunk)
-            progress.update(
-                progress_task,
-                completed=r.download_progress.total,
-                total=content_length,
-            )
+        state = pyhaul.HaulState()
+        content_length = 1
+
+        def show_progress(state: pyhaul.HaulState) -> None:
+            nonlocal content_length
+            if not content_length:
+                if state.reported_length:
+                    content_length = state.reported_length
+                else:
+                    # download progress requires content length but it is not always present
+                    content_length = pyhaul.probe(
+                        image_spec["url"],
+                        http.session,
+                        options=TransportRequestOptions(allow_redirects=True),
+                    ).total_length
+
+            progress.update(progress_task, completed=state.valid_length, total=content_length)
+
+        for attempt in range(1, 6):
+            if attempt > 1:
+                progress.update(
+                    progress_task, description=f"Downloading the image (attempt {attempt})..."
+                )
+            wait = 0.0
+            fail_reason = ""
+            try:
+                pyhaul.haul(
+                    image_spec["url"],
+                    http.session,
+                    dest=download_destination,
+                    state=state,
+                    on_progress=show_progress,
+                )
+            except pyhaul.PartialHaulError as exc:
+                if state.bytes_read == 0:
+                    wait = min(2**attempt, 30)
+                # else: retry immediately — connection works, just dropped
+                fail_reason = exc.reason
+            except pyhaul.UnexpectedStatusError as exc:
+                wait = (
+                    exc.retry_after_seconds
+                    if exc.retry_after_seconds is not None
+                    else min(2**attempt, 60)
+                )
+                fail_reason = exc.reason
+                if not exc.is_transient:
+                    raise
+            else:
+                break
+            print(f"attempt {attempt}: {fail_reason}")
+            if wait:
+                time.sleep(wait)
+        else:
+            raise RuntimeError("download failed after 10 attempts")
+
         progress.update(progress_task, completed=content_length)
+
+    with open(download_destination, "rb") as fp:
+        h = hashlib.file_digest(fp, hash_name)
 
     _, _, compression = image_spec["image_format"].partition("+")
     if not compression:

@@ -22,6 +22,7 @@ dependencies = [
     "lxml",
     "niquests[http3,speedups]",
     "platformdirs",
+    "pyhaul",
     "pyyaml",
     "rich",
     "typing-extensions",
