@@ -1,6 +1,6 @@
 import argparse
 import base64
-import importlib.abc
+import importlib.resources
 import json
 import os
 import shutil
@@ -71,7 +71,7 @@ def _generate_cloud_init(public_key: str) -> dict[str, str]:
     return {"user-data": f"#cloud-config\n{yaml.dump(user_data)}", "meta-data": ""}
 
 
-def _write_resource_contents(src: importlib.abc.Traversable, target_dir: str) -> str:
+def _write_resource_contents(src: importlib.resources.abc.Traversable, target_dir: str) -> str:
     child = f"{target_dir}/{src.name}"
     if src.is_dir():
         os.mkdir(child)

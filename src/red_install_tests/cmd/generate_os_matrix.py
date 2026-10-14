@@ -22,13 +22,9 @@ _LANGUAGE_TO_SHELL: Final[dict[str, ShellType]] = {
 
 
 def _get_scripts_dir(venv_dir: str) -> str:
-    if sys.version_info >= (3, 11):
-        return sysconfig.get_path(
-            "scripts", scheme="venv", vars={"base": venv_dir, "platbase": venv_dir}
-        )
-    if sys.platform == "win32":
-        return os.path.join(venv_dir, "Scripts")
-    return os.path.join(venv_dir, "bin")
+    return sysconfig.get_path(
+        "scripts", scheme="venv", vars={"base": venv_dir, "platbase": venv_dir}
+    )
 
 
 def prompt_has_modifier(prompt: dict[str, Any], modifier: str):

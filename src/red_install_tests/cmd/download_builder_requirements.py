@@ -8,13 +8,12 @@ import sys
 import tarfile
 import tempfile
 import zipfile
-from collections.abc import Callable, Collection, Iterable, Sequence
+from collections.abc import Callable, Collection, Iterable
 from io import BytesIO
-from typing import Any, ClassVar, Final
+from typing import ClassVar, Final, Self
 from urllib.parse import urlsplit
 
 import niquests
-from typing_extensions import Self
 
 from red_install_tests import http
 from red_install_tests.cli import add_deps_dir_option, parser_spec, run
@@ -318,36 +317,6 @@ class Downloader(_DownloaderBase):
                 installed_reqs.add(req_name)
 
 
-class _ValidateChoicesAction(argparse.Action):
-    def __init__(
-        self,
-        option_strings: Sequence[str],
-        dest: str,
-        *,
-        choices: Iterable[Any] | None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(option_strings, dest, **kwargs)
-        self.__choices = choices
-
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: str | Sequence[Any] | None,
-        option_string: str | None = None,
-    ) -> None:
-        del option_string
-        if values is not None and not isinstance(values, str):
-            for value in values:
-                self.choices = self.__choices
-                try:
-                    parser._check_value(self, value)
-                finally:
-                    self.choices = None
-        setattr(namespace, self.dest, values)
-
-
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     add_deps_dir_option(parser)
@@ -355,9 +324,7 @@ def setup_parser(parser: argparse.ArgumentParser, /) -> None:
         "requirements",
         metavar="requirement",
         nargs="*",
-        # this doesn't work without `_ValidateChoicesAction` until Python 3.12
         choices=Downloader.REQUIREMENTS,
-        action=_ValidateChoicesAction,
     )
     parser.set_defaults(func=main)
 

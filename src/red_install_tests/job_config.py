@@ -5,9 +5,7 @@ import os
 import platform
 import shutil
 import sys
-from typing import Final, Literal, TypedDict
-
-from typing_extensions import Self
+from typing import Final, Literal, Self, TypedDict
 
 from .image_location import ImageSpec
 from .run_config import OS_MATRIX_FILENAME, RUN_CONFIG_FILENAME

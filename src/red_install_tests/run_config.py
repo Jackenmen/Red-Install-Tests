@@ -1,9 +1,7 @@
 import dataclasses
 import json
 import os
-from typing import Final, TypedDict
-
-from typing_extensions import Self
+from typing import Final, Self, TypedDict
 
 RUN_CONFIG_FILENAME: Final = "run_config.json"
 OS_MATRIX_FILENAME: Final = "os_matrix.json"

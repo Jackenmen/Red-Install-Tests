@@ -1,9 +1,9 @@
 import re
-from typing import Any, Final, Literal
+from typing import Any, Final, Literal, NotRequired, ReadOnly
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from lxml import etree
-from typing_extensions import NotRequired, ReadOnly, TypedDict
+from typing_extensions import TypedDict
 
 from . import http
 
