@@ -20,6 +20,61 @@ from red_install_tests.job_config import JOBS_DIR, JobConfig, get_job_config
 from red_install_tests.resources import RESOURCES
 from red_install_tests.run_config import DEFAULT_RUN_DIR, RunConfig, get_run_config
 
+# Sourced from:
+# https://github.com/canonical/cloud-init/blob/2e29ad07daced32d3fac1cb2aa93b817fe12b291/templates/chrony.conf.rocky.tmpl
+_CHRONY_CONF_ROCKY = """## template:jinja
+# Use public servers from the pool.ntp.org project.
+# Please consider joining the pool (http://www.pool.ntp.org/join.html).
+{% if pools %}# pools
+{% endif %}
+{% for pool in pools -%}
+pool {{pool}} iburst
+{% endfor %}
+{%- if servers %}# servers
+{% endif %}
+{% for server in servers -%}
+server {{server}} iburst
+{% endfor %}
+{% for peer in peers -%}
+peer {{peer}}
+{% endfor %}
+{% for a in allow -%}
+allow {{a}}
+{% endfor %}
+
+# Record the rate at which the system clock gains/losses time.
+driftfile /var/lib/chrony/drift
+
+# Allow the system clock to be stepped in the first three updates
+# if its offset is larger than 1 second.
+makestep 1.0 3
+
+# Enable kernel synchronization of the real-time clock (RTC).
+rtcsync
+
+# Enable hardware timestamping on all interfaces that support it.
+#hwtimestamp *
+
+# Increase the minimum number of selectable sources required to adjust
+# the system clock.
+#minsources 2
+
+# Allow NTP client access from local network.
+#allow 192.168.0.0/16
+
+# Serve time even if not synchronized to a time source.
+#local stratum 10
+
+# Specify file containing keys for NTP authentication.
+#keyfile /etc/chrony.keys
+
+# Specify directory for log files.
+logdir /var/log/chrony
+
+# Select which information is logged.
+#log measurements statistics tracking
+"""
+
 
 def chmod_opener(mode: int) -> Callable[[str, int], int]:
     def opener(path: str, flags: int) -> int:
@@ -68,9 +123,21 @@ def _generate_cloud_init(public_key: str, *, image_name: str) -> dict[str, str]:
             "servers": ["time.cloudflare.com", "time.google.com"],
             "config": {"check_exe": "chronyd"},
         },
+        # Workaround for Rocky Linux 8's cloud-init's ntp module missing chrony.conf template
+        "write_files": [
+            {
+                "path": "/etc/cloud/templates/chrony.conf.rocky.tmpl",
+                "encoding": "b64",
+                "content": base64.b64encode(_CHRONY_CONF_ROCKY.encode()).decode(),
+                "owner": "root:root",
+                "permissions": "0644",
+            },
+        ],
     }
-    # see https://bugzilla.redhat.com/show_bug.cgi?id=2552941
-    if image_name.startswith(("fedora-43", "fedora-44")):
+    # see:
+    # - Fedora: https://bugzilla.redhat.com/show_bug.cgi?id=2552941
+    # - Rocky: https://github.com/canonical/cloud-init/pull/5864
+    if image_name.startswith(("fedora-43", "fedora-44", "rocky-linux-8")):
         user_data["ntp"]["config"]["service_name"] = "chronyd"
     return {"user-data": f"#cloud-config\n{yaml.dump(user_data)}", "meta-data": ""}
 
