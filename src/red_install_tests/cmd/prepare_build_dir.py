@@ -52,7 +52,7 @@ def _generate_ssh_key(build_dir: str) -> tuple[str, str]:
     return key_path, public_key
 
 
-def _generate_cloud_init(public_key: str) -> dict[str, str]:
+def _generate_cloud_init(public_key: str, *, image_name: str) -> dict[str, str]:
     user_data = {
         "users": [
             "default",
@@ -66,8 +66,12 @@ def _generate_cloud_init(public_key: str) -> dict[str, str]:
         "ntp": {
             "pools": ["pool.ntp.org"],
             "servers": ["time.cloudflare.com", "time.google.com"],
+            "config": {"check_exe": "chronyd"},
         },
     }
+    # see https://bugzilla.redhat.com/show_bug.cgi?id=2552941
+    if image_name.startswith(("fedora-43", "fedora-44")):
+        user_data["ntp"]["config"]["service_name"] = "chronyd"
     return {"user-data": f"#cloud-config\n{yaml.dump(user_data)}", "meta-data": ""}
 
 
@@ -191,7 +195,9 @@ class QemuBuildDirGenerator(BuildDirGenerator):
                 self._prepare_windows_specific_config()
 
     def _prepare_linux_specific_config(self) -> None:
-        cloud_init_files = _generate_cloud_init(self.public_key)
+        cloud_init_files = _generate_cloud_init(
+            self.public_key, image_name=self.image_spec["name"]
+        )
         self.packer_vars["http_content"] = {
             f"/{filename}": content for filename, content in cloud_init_files.items()
         }
