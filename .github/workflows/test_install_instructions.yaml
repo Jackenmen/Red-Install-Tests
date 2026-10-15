@@ -42,6 +42,8 @@ jobs:
   generate-matrix:
     name: Generate OS matrix
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     outputs:
       run-config: ${{ steps.generate-run.outputs.run-config }}
@@ -117,6 +119,8 @@ jobs:
           matrix.image_spec.arch == 'aarch64', 'ubuntu-26.04-arm',
           'ubuntu-26.04'
       ) }}
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout the repository
@@ -255,6 +259,9 @@ jobs:
     needs: test-install-instructions
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
 
     steps:
       - name: Generate run summary
