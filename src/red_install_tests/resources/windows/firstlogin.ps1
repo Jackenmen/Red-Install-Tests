@@ -1,3 +1,6 @@
+# Disable screen timeout
+powercfg.exe /change monitor-timeout-ac 0
+
 # Disable Network Location wizard prompt when
 reg add 'HKLM\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff' /f
 

@@ -26,6 +26,7 @@ dependencies = [
     "pyyaml",
     "rich",
     "typing-extensions",
+    "vncdotool",
 ]
 
 [project.scripts]

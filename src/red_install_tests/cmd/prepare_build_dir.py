@@ -186,6 +186,7 @@ class BuildDirGenerator:
             "red_package_spec": run_config.package_spec,
             "red_expected_java_version": self.image_spec["expected_java_version"],
             "os": self.image_spec["os"],
+            "harness_python": sys.executable,
         }
 
     @property
