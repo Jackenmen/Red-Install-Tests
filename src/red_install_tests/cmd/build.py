@@ -37,6 +37,11 @@ TRANSIENT_ERROR_PATTERN = _compile_pattern(
     )
     """
 )
+PACKER_INIT_TRANSIENT_ERROR_PATTERN = re.compile(
+    r"    \* could not get sha256 checksum file for [^ ]+\."
+    r" Is the file present on the release and correctly named \?"
+    r" GET https://[^ ]+_SHA256SUMS: (500|502|503|504) "
+)
 
 
 @parser_spec
@@ -52,7 +57,23 @@ def main(args: argparse.Namespace, /) -> None:
     job_config = get_job_config(job_dir)
     build_dir = os.path.join(job_dir, "packer-build")
 
-    subprocess.check_call(("packer", "init", build_dir))
+    for attempt in range(1, 4):
+        cp = subprocess.run(
+            ("packer", "init", build_dir),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+        print(cp.stdout, flush=True)
+        if not cp.returncode:
+            break
+        if not PACKER_INIT_TRANSIENT_ERROR_PATTERN.search(cp.stdout):
+            print("Failure does not seem to be due to a transient error, will not retry.")
+            raise SystemExit(cp.returncode)
+        time.sleep(2**attempt)
+    else:
+        raise SystemExit(cp.returncode)
 
     env = os.environ.copy()
     env["PACKER_LOG"] = "1"
