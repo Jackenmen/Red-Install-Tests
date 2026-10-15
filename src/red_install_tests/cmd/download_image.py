@@ -60,7 +60,7 @@ def _cache_image(image_spec: DiskImageSpec, cache_dir: str) -> None:
 
         def show_progress(state: pyhaul.HaulState) -> None:
             nonlocal content_length
-            if not content_length:
+            if content_length == 1:
                 if state.reported_length:
                     content_length = state.reported_length
                 else:
