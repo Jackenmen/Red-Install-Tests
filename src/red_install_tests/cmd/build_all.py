@@ -4,18 +4,8 @@ import os
 import sys
 import traceback
 
-from red_install_tests.cli import add_run_dir_option, parser_spec, run
+from red_install_tests.cli import add_run_dir_option, parser_spec, positive_int, run
 from red_install_tests.job_config import JOBS_DIR
-
-
-def positive_int(arg: str) -> int:
-    try:
-        x = int(arg)
-    except ValueError:
-        raise argparse.ArgumentTypeError("The argument has to be a number.") from None
-    if x > 0:
-        return x
-    raise argparse.ArgumentTypeError("The argument has to be a positive integer.")
 
 
 @parser_spec

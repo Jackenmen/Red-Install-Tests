@@ -1,30 +1,92 @@
 import argparse
 import os
+import re
 import subprocess
+import time
 
-from red_install_tests.cli import add_job_dir_option, parser_spec, run
+from red_install_tests.cli import add_job_dir_option, log_group, parser_spec, positive_int, run
+from red_install_tests.job_config import get_job_config
+
+
+def _compile_pattern(pattern: bytes) -> re.Pattern[bytes]:
+    return re.compile(
+        b"".join(
+            line for line in map(bytes.lstrip, pattern.splitlines()) if not line.startswith(b"#")
+        )
+    )
+
+
+ANSI_CODES_PATTERN = re.compile(rb"(?i)\x1b\[([0-9]{1,2}(;[0-9]{1,2})?)?[a|b|m|k]")
+TRANSIENT_ERROR_PATTERN = _compile_pattern(
+    rb"""
+    # timestamp
+    ^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} (
+        # install command transient errors
+        ui error: ==> (
+            windows-([a-z0-9\-]+)\.[a-z]+\.tests:
+            \ The system cannot find the path specified\.$
+            |fedora-([a-z0-9\-]+)\.[a-z]+\.tests:
+            \ >>> Status code: 503 for https://packages\.adoptium\.net
+            |opensuse-tumbleweed-([a-z0-9\-]+)\.[a-z]+\.tests:
+            \ Repository 'openSUSE-Tumbleweed-Oss' is invalid\.
+            |(debian|ubuntu)-([a-z0-9\-]+)\.[a-z]+\.tests: (
+                E: .+ Mirror sync in progress\?
+                |lazr\.restfulclient\.errors\.ServerError: HTTP Error 500
+            )
+        )
+    )
+    """
+)
 
 
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     add_job_dir_option(parser)
+    parser.add_argument("--attempts", type=positive_int, default=1)
     parser.add_argument("extra_packer_args", nargs="*")
     parser.set_defaults(func=main)
 
 
 def main(args: argparse.Namespace, /) -> None:
     job_dir = os.path.abspath(args.job_dir)
+    job_config = get_job_config(job_dir)
     build_dir = os.path.join(job_dir, "packer-build")
 
     subprocess.check_call(("packer", "init", build_dir))
 
     env = os.environ.copy()
     env["PACKER_LOG"] = "1"
-    env["PACKER_LOG_PATH"] = os.path.join(build_dir, "packer.log")
-    try:
-        cp = subprocess.run(("packer", "build", *args.extra_packer_args, build_dir), env=env)
-    except KeyboardInterrupt:
-        raise SystemExit(2) from None
+    for attempt in range(1, args.attempts + 1):
+        log_file = os.path.join(build_dir, f"packer-{attempt}.log")
+        env["PACKER_LOG_PATH"] = log_file
+        with log_group(f"Build {job_config.image_spec['name']} - attempt {attempt}"):
+            try:
+                cp = subprocess.run(
+                    ("packer", "build", *args.extra_packer_args, build_dir), env=env
+                )
+            except KeyboardInterrupt:
+                raise SystemExit(2) from None
+
+            if not cp.returncode:
+                break
+
+            print(f"=== Attempt {attempt} failed with exit code {cp.returncode} ===")
+
+            with open(log_file, "rb") as fp:
+                for line in fp:
+                    if TRANSIENT_ERROR_PATTERN.search(ANSI_CODES_PATTERN.sub(b"", line)):
+                        break
+                else:
+                    print("Failure does not seem to be due to a transient error, will not retry.")
+                    break
+
+            if attempt != args.attempts:
+                wait = 2**attempt
+                print(f"Retrying in {wait} seconds...")
+                time.sleep(wait)
+
+        if attempt != args.attempts:
+            print(f"=== Attempt {attempt + 1} ===")
 
     raise SystemExit(cp.returncode)
 

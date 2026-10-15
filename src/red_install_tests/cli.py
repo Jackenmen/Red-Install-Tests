@@ -1,6 +1,7 @@
 import argparse
+import contextlib
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from typing import Any, Protocol
 
 from .run_config import DEFAULT_RUN_DIR
@@ -41,3 +42,28 @@ def add_deps_dir_option(parser: argparse.ArgumentParser) -> None:
 
 def add_name_patterns_argument(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("patterns", metavar="pattern", nargs="*")
+
+
+def positive_int(arg: str) -> int:
+    try:
+        x = int(arg)
+    except ValueError:
+        raise argparse.ArgumentTypeError("The argument has to be a number.") from None
+    if x > 0:
+        return x
+    raise argparse.ArgumentTypeError("The argument has to be a positive integer.")
+
+
+def is_github_actions_ci() -> bool:
+    return os.getenv("GITHUB_ACTIONS") == "true"
+
+
+@contextlib.contextmanager
+def log_group(title: str) -> Generator[None]:
+    if is_github_actions_ci():
+        print(f"::group::{title}", flush=True)
+    try:
+        yield
+    finally:
+        if is_github_actions_ci():
+            print("::endgroup::", flush=True)

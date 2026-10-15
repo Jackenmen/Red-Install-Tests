@@ -203,7 +203,7 @@ jobs:
         id: build
         env:
           PACKER_GITHUB_API_TOKEN: ${{ github.token }}
-        run: hatch run build
+        run: hatch run build -- --attempts 3
 
       - name: Collect failure screenshot
         env:
@@ -222,11 +222,30 @@ jobs:
         env:
           IMAGE_NAME: ${{ matrix.image_spec.name }}
         if: always() && contains(fromJSON('["success", "failure"]'), steps.build.conclusion)
-        run: cp os-build-run/packer-build/packer.log "${IMAGE_NAME}-packer.log"
+        run: |
+          cp os-build-run/packer-build/packer-1.log "${IMAGE_NAME}-packer-1.log"
+          cp os-build-run/packer-build/packer-2.log "${IMAGE_NAME}-packer-2.log" || true
+          cp os-build-run/packer-build/packer-3.log "${IMAGE_NAME}-packer-3.log" || true
 
-      - name: Upload Packer logs
+      - name: Upload Packer logs for attempt 1
         if: always() && contains(fromJSON('["success", "failure"]'), steps.build.conclusion)
         uses: actions/upload-artifact@v7
         with:
-          path: ${{ matrix.image_spec.name }}-packer.log
+          path: ${{ matrix.image_spec.name }}-packer-1.log
           archive: false
+
+      - name: Upload Packer logs for attempt 2
+        if: always() && contains(fromJSON('["success", "failure"]'), steps.build.conclusion)
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.image_spec.name }}-packer-2.log
+          archive: false
+          if-no-files-found: ignore
+
+      - name: Upload Packer logs for attempt 3
+        if: always() && contains(fromJSON('["success", "failure"]'), steps.build.conclusion)
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.image_spec.name }}-packer-3.log
+          archive: false
+          if-no-files-found: ignore
