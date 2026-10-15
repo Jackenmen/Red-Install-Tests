@@ -249,3 +249,53 @@ jobs:
           path: ${{ matrix.image_spec.name }}-packer-3.log
           archive: false
           if-no-files-found: ignore
+
+  generate-summary:
+    name: Generate run summary
+    needs: test-install-instructions
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate run summary
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          declare -A job_conclusions
+          while read -r image_name conclusion; do
+            job_conclusions[$image_name]="$conclusion"
+          done < <(
+            gh run view "$GITHUB_RUN_ID" --json jobs \
+              --jq '
+                .jobs[]
+                | select(.name | endswith(" - Test install instructions"))
+                | "\(.name | split(" ")[0]) \(.conclusion)"
+              '
+          )
+
+          declare -A job_attempt_counts
+          while read -r image_name attempt_count; do
+            job_attempt_counts[$image_name]="$attempt_count"
+          done < <(
+            gh api "/repos/{owner}/{repo}/actions/runs/$GITHUB_RUN_ID/artifacts" \
+              --jq '[.artifacts[].name]
+                | map(select(. | test("-packer-\\d.log")))
+                | group_by(.[:-13])
+                | sort_by(-(. | length), .)[]
+                | "\(.[0][:-13]) \(. | length)"
+              '
+          )
+
+          echo '# Run summary' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Image name | Conclusion | Attempt count |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| --- | --- | --- |' >> "$GITHUB_STEP_SUMMARY"
+
+          for image_name in "${!job_conclusions[@]}"; do
+            conclusion="${job_conclusions[$image_name]}"
+            attempt_count="${job_attempt_counts[$image_name]}"
+            if [[ -z "$attempt_count" ]]; then
+              attempt_count='0'
+            fi
+            echo "| $image_name | $conclusion | $attempt_count |" >> "$GITHUB_STEP_SUMMARY"
+          done
