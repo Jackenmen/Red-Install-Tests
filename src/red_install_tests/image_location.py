@@ -40,6 +40,7 @@ _BSD_CHECKSUM_PATTERN: Final = re.compile(
 
 OsType = Literal["darwin", "linux", "windows"]
 ArchType = Literal["x86_64", "aarch64"]
+ChecksumStyle = Literal["bsd", "gnu"]
 ChecksumType = Literal["sha256", "sha512"]
 ImageFormatType = Literal["qcow2", "raw", "raw+xz"]
 MachineType = Literal["raspi3b", None]
@@ -63,7 +64,7 @@ class _DiskImageLocation(_BaseImageLocation):
 
 class ChecksumFileImageLocation(_DiskImageLocation, closed=True):
     download_type: Literal["checksum-file"]
-    checksum_style: NotRequired[Literal["bsd", "gnu"]]
+    checksum_style: NotRequired[ChecksumStyle]
     checksum_type: NotRequired[ChecksumType]
     filename_pattern: str
 
@@ -73,11 +74,22 @@ class DirectUrlImageLocation(_DiskImageLocation, closed=True):
     checksum: str
 
 
-class HtmlImageLocation(_DiskImageLocation, closed=True):
+class _BaseHtmlImageLocation(_DiskImageLocation):
     download_type: Literal["html"]
     url_xpath: str
-    checksum_xpath: str
     checksum_type: NotRequired[ChecksumType]
+
+
+class _HtmlImageLocationChecksumFile(_BaseHtmlImageLocation, closed=True):
+    checksum_file_url_xpath: str
+    checksum_style: NotRequired[ChecksumStyle]
+
+
+class _HtmlImageLocationChecksumValue(_BaseHtmlImageLocation, closed=True):
+    checksum_xpath: str
+
+
+HtmlImageLocation = _HtmlImageLocationChecksumFile | _HtmlImageLocationChecksumValue
 
 
 class TartImageLocation(_BaseImageLocation, closed=True):
@@ -163,13 +175,12 @@ def _create_disk_image_spec(
     }
 
 
-def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation) -> DiskImageSpec:
-    url = location["url"]
+def _get_checksum(
+    url: str, *, checksum_style: ChecksumStyle, filename_pattern: str
+) -> tuple[str, str]:
     r = http.get(url)
-    checksum_type = location.get("checksum_type", "sha256")
-    checksum_style = location.get("checksum_style", "gnu")
     checksum_pattern = _GNU_CHECKSUM_PATTERN if checksum_style == "gnu" else _BSD_CHECKSUM_PATTERN
-    filename_pattern = re.compile(location["filename_pattern"])
+    filename_re = re.compile(filename_pattern)
     matched_files = []
     checksum_count = 0
     if not r.text:
@@ -183,7 +194,7 @@ def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation)
             continue
         checksum_count += 1
         filename = match.group("filename")
-        if filename_pattern.search(filename):
+        if filename_re.search(filename):
             matched_files.append((filename, match.group("checksum")))
 
     if not checksum_count:
@@ -194,15 +205,25 @@ def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation)
 
     if not matched_files:
         raise RuntimeError(
-            f"could not find any files matching the specified pattern ({filename_pattern!r})"
+            f"could not find any files matching the specified pattern ({filename_re!r})"
             f" in the file at URL: {url}"
         )
     if len(matched_files) > 1:
         raise RuntimeError(
-            f"more than one file matched the specified pattern ({filename_pattern!r})"
+            f"more than one file matched the specified pattern ({filename_re!r})"
             f" in the file at URL: {url}"
         )
-    filename, checksum = matched_files.pop()
+    return matched_files.pop()
+
+
+def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation) -> DiskImageSpec:
+    url = location["url"]
+    checksum_type = location.get("checksum_type", "sha256")
+    filename, checksum = _get_checksum(
+        url,
+        checksum_style=location.get("checksum_style", "gnu"),
+        filename_pattern=location["filename_pattern"],
+    )
     parsed_url = urlsplit(url)
     base_path, _, _ = parsed_url.path.rpartition("/")
 
@@ -219,7 +240,6 @@ def _generate_image_spec_from_direct_url(location: DirectUrlImageLocation) -> Di
 
 def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec:
     url_xpath = etree.XPath(location["url_xpath"])
-    checksum_xpath = etree.XPath(location["checksum_xpath"])
     url = location["url"]
     checksum_type = location.get("checksum_type", "sha256")
 
@@ -233,16 +253,41 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
             f"did not find any elements matching provided URL XPath ({url_xpath!r})"
             f" in the HTML file at URL: {url}"
         )
-    checksums = checksum_xpath(root)
-    if not checksums:
-        raise RuntimeError(
-            f"did not find any elements matching provided checksum XPath ({checksum_xpath!r})"
-            f" in the HTML file at URL: {url}"
-        )
     download_url = urljoin(url, _xpath_string(download_urls[0]))
 
+    checksum = ""
+    if xpath := location.get("checksum_xpath"):
+        checksum_xpath = etree.XPath(xpath)
+        checksums = checksum_xpath(root)
+        if not checksums:
+            raise RuntimeError(
+                f"did not find any elements matching provided checksum XPath ({xpath!r})"
+                f" in the HTML file at URL: {url}"
+            )
+        checksum = checksums[0]
+    if xpath := location.get("checksum_file_url_xpath"):
+        checksum_file_url_xpath = etree.XPath(xpath)
+        checksum_file_urls = checksum_file_url_xpath(root)
+        if not checksum_file_urls:
+            raise RuntimeError(
+                f"did not find any elements matching provided checksum file URL XPath ({xpath!r})"
+                f" in the HTML file at URL: {url}"
+            )
+
+        parsed_download_url = urlsplit(download_url)
+        _, _, download_filename = parsed_download_url.path.rpartition("/")
+
+        _, checksum = _get_checksum(
+            urljoin(url, _xpath_string(checksum_file_urls[0])),
+            checksum_style=location.get("checksum_style", "gnu"),
+            filename_pattern=re.escape(download_filename),
+        )
+
+    if not checksum:
+        raise RuntimeError("both checksum_xpath and checksum_file_url_xpath are missing")
+
     return _create_disk_image_spec(
-        location, url=download_url, checksum=f"{checksum_type}:{checksums[0]}"
+        location, url=download_url, checksum=f"{checksum_type}:{checksum}"
     )
 
 
