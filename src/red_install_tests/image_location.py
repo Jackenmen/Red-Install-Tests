@@ -247,13 +247,13 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
     if not r.text:
         raise RuntimeError(f"could not decode response from URL: {url}")
     root = etree.HTML(r.text)
-    download_urls = url_xpath(root)
-    if not download_urls:
+    download_url = _xpath_string(url_xpath(root))
+    if not download_url:
         raise RuntimeError(
             f"did not find any elements matching provided URL XPath ({url_xpath!r})"
             f" in the HTML file at URL: {url}"
         )
-    download_url = urljoin(url, _xpath_string(download_urls[0]))
+    download_url = urljoin(url, download_url)
 
     checksum = ""
     if xpath := location.get("checksum_xpath"):
@@ -267,18 +267,19 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
         checksum = checksums[0]
     if xpath := location.get("checksum_file_url_xpath"):
         checksum_file_url_xpath = etree.XPath(xpath)
-        checksum_file_urls = checksum_file_url_xpath(root)
-        if not checksum_file_urls:
+        checksum_file_url = _xpath_string(checksum_file_url_xpath(root))
+        if not checksum_file_url:
             raise RuntimeError(
                 f"did not find any elements matching provided checksum file URL XPath ({xpath!r})"
                 f" in the HTML file at URL: {url}"
             )
+        checksum_file_url = urljoin(url, _xpath_string(checksum_file_url))
 
         parsed_download_url = urlsplit(download_url)
         _, _, download_filename = parsed_download_url.path.rpartition("/")
 
         _, checksum = _get_checksum(
-            urljoin(url, _xpath_string(checksum_file_urls[0])),
+            checksum_file_url,
             checksum_style=location.get("checksum_style", "gnu"),
             filename_pattern=re.escape(download_filename),
         )
