@@ -102,6 +102,28 @@ jobs:
           jq -j '.patterns | join(" ") | select(. != "") // " "' os-build-run/run_config.json >> "$GITHUB_STEP_SUMMARY"
           echo '`' >> "$GITHUB_STEP_SUMMARY"
 
+          echo '# Jobs' >> "$GITHUB_STEP_SUMMARY"
+          while read -r job_config; do
+            echo '<details>' >> "$GITHUB_STEP_SUMMARY"
+            echo "$job_config" | jq -r '"<summary>\(.image_spec.name)</summary>"' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '## Image spec' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            echo "$job_config" | jq '.image_spec' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+            echo '## Install instructions' >> "$GITHUB_STEP_SUMMARY"
+            echo '```console' >> "$GITHUB_STEP_SUMMARY"
+            echo "$job_config" | jq -r '
+              .install_instructions[]
+                | .elevated as $elevated
+                | .commands[]
+                | "\(if $elevated then "#" else "$" end) \(.)"
+              ' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '</details>' >> "$GITHUB_STEP_SUMMARY"
+          done < <(jq -c '.[]' os-build-run/os_matrix.json)
+
   test-install-instructions:
     name: ${{ matrix.image_spec.name }} - Test install instructions
     needs: generate-matrix
@@ -134,26 +156,6 @@ jobs:
           mkdir os-build-run
           echo "$RUN_CONFIG" > os-build-run/run_config.json
           echo "$JOB_CONFIG" > os-build-run/job_config.json
-
-      - name: Add job information to workflow summary
-        run: |
-          echo '# Job information' >> "$GITHUB_STEP_SUMMARY"
-
-          echo '## Image spec' >> "$GITHUB_STEP_SUMMARY"
-          echo '```json' >> "$GITHUB_STEP_SUMMARY"
-          jq '.image_spec' os-build-run/job_config.json >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-          echo '## Install instructions' >> "$GITHUB_STEP_SUMMARY"
-          echo '```console' >> "$GITHUB_STEP_SUMMARY"
-          jq -r '
-            .install_instructions[]
-              | .elevated as $elevated
-              | .commands[]
-              | "\(if $elevated then "#" else "$" end) \(.)"
-            ' \
-            os-build-run/job_config.json >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Increase available disk space on the runner
         uses: endersonmenezes/free-disk-space@7901478139cff6e9d44df5972fd8ab8fcade4db1 # v3.2.2
