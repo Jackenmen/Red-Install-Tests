@@ -31,6 +31,7 @@ dependencies = [
 
 [project.scripts]
 red-install-tests = "red_install_tests.cmd.__main__:main"
+_red-install-tests-run-qemu = "red_install_tests.cmd._run_qemu:main"
 
 [project.urls]
 Documentation = "https://github.com/Jackenmen/Red-Install-Tests#readme"

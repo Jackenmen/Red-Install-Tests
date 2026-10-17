@@ -1,10 +1,15 @@
 packer {
   required_plugins {
     qemu = {
-      version = ">= 1.4.0"
+      version = ">= 1.4.4"
       source = "github.com/cog-creators/qemu"
     }
   }
+}
+
+variable "red_install_tests_qemu" {
+  type = string
+  default = env("RED_INSTALL_TESTS_QEMU")
 }
 
 variable "iso_url" {
@@ -147,7 +152,7 @@ source "qemu" "tests" {
   boot_wait = "-1s"
 
   # Use the correct binary for the tested system
-  qemu_binary = "qemu-system-${var.architecture}"
+  qemu_binary = coalesce(var.red_install_tests_qemu, "qemu-system-${var.architecture}")
 
   # RAM values:
   # - for Raspberry Pi 3B, it needs to match the actual board (1 GB)

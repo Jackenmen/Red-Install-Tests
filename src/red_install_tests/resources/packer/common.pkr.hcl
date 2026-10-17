@@ -1,5 +1,6 @@
-variable "harness_python" {
+variable "red_install_tests_python" {
   type = string
+  default = env("RED_INSTALL_TESTS_PYTHON")
 }
 
 variable "output_directory" {
@@ -196,21 +197,6 @@ build {
       remote_path = "${local.tmp_dir}/script-${uuidv4()}.py"
       env = local.env_vars
     }
-  }
-
-  // Capture the screen before destroying the VM on failure.
-  error-cleanup-provisioner "shell-local" {
-    command = "unused-placeholder"
-    execute_command = [
-      "${var.harness_python}",
-      "-m",
-      "vncdotool.command",
-      "-s",
-      "127.0.0.1::${build.VNCPort}",
-      "capture",
-      "${path.root}/screen.png",
-    ]
-    except = ["source.null.tests", "source.tart-cli.tests"]
   }
 
   // Remove the output directory since we don't actually need the built image.

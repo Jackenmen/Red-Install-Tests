@@ -215,14 +215,33 @@ jobs:
         env:
           IMAGE_NAME: ${{ matrix.image_spec.name }}
         if: always() && steps.build.conclusion == 'failure'
-        run: cp os-build-run/packer-build/screen.png "${IMAGE_NAME}-screen.png"
+        run: |
+          cp os-build-run/packer-build/screen-1.png "${IMAGE_NAME}-screen-1.png"
+          cp os-build-run/packer-build/screen-2.png "${IMAGE_NAME}-screen-2.png" || true
+          cp os-build-run/packer-build/screen-3.png "${IMAGE_NAME}-screen-3.png" || true
 
-      - name: Upload failure screenshot
+      - name: Upload failure screenshot for attempt 1
         if: always() && steps.build.conclusion == 'failure'
         uses: actions/upload-artifact@v7
         with:
-          path: ${{ matrix.image_spec.name }}-screen.png
+          path: ${{ matrix.image_spec.name }}-screen-1.png
           archive: false
+
+      - name: Upload failure screenshot for attempt 2
+        if: always() && steps.build.conclusion == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.image_spec.name }}-screen-2.png
+          archive: false
+          if-no-files-found: ignore
+
+      - name: Upload failure screenshot for attempt 3
+        if: always() && steps.build.conclusion == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.image_spec.name }}-screen-3.png
+          archive: false
+          if-no-files-found: ignore
 
       - name: Collect logs
         env:

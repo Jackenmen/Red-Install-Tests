@@ -2,6 +2,7 @@ import argparse
 import os
 import re
 import subprocess
+import sys
 import time
 
 from red_install_tests.cli import add_job_dir_option, log_group, parser_spec, positive_int, run
@@ -57,6 +58,14 @@ def main(args: argparse.Namespace, /) -> None:
     job_config = get_job_config(job_dir)
     build_dir = os.path.join(job_dir, "packer-build")
 
+    env = os.environ.copy()
+    qemu_bin = os.path.join(os.path.dirname(sys.executable), "_red-install-tests-run-qemu")
+    if sys.platform == "win32":
+        qemu_bin += ".exe"
+    env["RED_INSTALL_TESTS_PYTHON"] = sys.executable
+    env["RED_INSTALL_TESTS_QEMU"] = qemu_bin
+    env["RED_INSTALL_TESTS_ARCHITECTURE"] = job_config.image_spec["arch"]
+
     for attempt in range(1, 4):
         cp = subprocess.run(
             ("packer", "init", build_dir),
@@ -75,10 +84,10 @@ def main(args: argparse.Namespace, /) -> None:
     else:
         raise SystemExit(cp.returncode)
 
-    env = os.environ.copy()
     env["PACKER_LOG"] = "1"
     for attempt in range(1, args.attempts + 1):
         log_file = os.path.join(build_dir, f"packer-{attempt}.log")
+        env["RED_INSTALL_TESTS_SCREENSHOT_PATH"] = os.path.join(build_dir, f"screen-{attempt}.png")
         env["PACKER_LOG_PATH"] = log_file
         with log_group(f"Build {job_config.image_spec['name']} - attempt {attempt}"):
             try:
