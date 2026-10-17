@@ -6,6 +6,9 @@ on:
 
 jobs:
   test_dev_install_instructions:
+    permissions:
+      actions: read
+      contents: read
     name: Test dev install instructions
     uses: ./.github/workflows/test_install_instructions.yaml
     with:

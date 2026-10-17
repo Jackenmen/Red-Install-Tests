@@ -6,5 +6,8 @@ on:
 
 jobs:
   test_stable_install_instructions:
+    permissions:
+      actions: read
+      contents: read
     name: Test stable install instructions
     uses: ./.github/workflows/test_install_instructions.yaml
