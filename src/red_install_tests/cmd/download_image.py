@@ -19,6 +19,11 @@ CHECKSUM_FILE_NAME = "checksum.txt"
 CACHED_IMAGE_NAME = "system.img"
 
 
+class ChecksumMismatchError(RuntimeError):
+    def __init__(self, *, expected_hash: str, actual_hash: str) -> None:
+        super().__init__(f"Mismatching checksum - expected {expected_hash}, got {actual_hash}")
+
+
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     parser.add_argument("destination")
@@ -128,7 +133,7 @@ def _cache_image(image_spec: DiskImageSpec, cache_dir: str) -> None:
 
     actual_hash = h.hexdigest()
     if actual_hash != expected_hash:
-        raise RuntimeError(f"Mismatching checksum - expected {expected_hash}, got {actual_hash}")
+        raise ChecksumMismatchError(expected_hash=expected_hash, actual_hash=actual_hash)
 
     os.replace(uncompressed_destination, destination)
     with open(checksum_file, "w", encoding="utf-8") as fp:
@@ -149,17 +154,25 @@ def main(args: argparse.Namespace, /) -> None:
     )
     cached_image = os.path.join(cache_dir, CACHED_IMAGE_NAME)
 
+    cached = False
     try:
         # Ruff thinks this doesn't use a context manager but it actually does
         # https://github.com/astral-sh/ruff/issues/8221
         fp = open(os.path.join(cache_dir, CHECKSUM_FILE_NAME), encoding="utf-8")  # noqa: SIM115
     except FileNotFoundError:
-        _cache_image(image_spec, cache_dir)
+        pass
     else:
         with fp:
             cached_hash = fp.read().strip()
-            if cached_hash != image_spec["checksum"] or not os.path.isfile(cached_image):
-                _cache_image(image_spec, cache_dir)
+            if cached_hash == image_spec["checksum"] and os.path.isfile(cached_image):
+                cached = True
+
+    if not cached:
+        try:
+            _cache_image(image_spec, cache_dir)
+        except ChecksumMismatchError as exc:
+            print(str(exc))
+            raise SystemExit(1) from None
 
     destination = os.path.abspath(args.destination)
     try:

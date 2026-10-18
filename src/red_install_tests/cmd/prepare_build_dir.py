@@ -171,6 +171,10 @@ def _copy_resource(src: str, target_dir: str) -> str:
     return _write_resource_contents(path, target_dir)
 
 
+class PrepareError(RuntimeError):
+    """Failed to prepare build directory generator."""
+
+
 class BuildDirGenerator:
     def __init__(
         self, run_config: RunConfig, job_config: JobConfig, job_dir: str, *, deps_dir: str
@@ -222,16 +226,22 @@ class QemuBuildDirGenerator(BuildDirGenerator):
         self.key_path, self.public_key = _generate_ssh_key(self.build_dir)
 
         _copy_resource("packer/qemu.pkr.hcl", self.build_dir)
-        subprocess.check_call(
-            (
-                sys.executable,
-                "-m",
-                "red_install_tests.cmd.download_image",
-                self.image_path,
-                "--job-dir",
-                self.job_dir,
+        try:
+            subprocess.check_call(
+                (
+                    sys.executable,
+                    "-m",
+                    "red_install_tests.cmd.download_image",
+                    self.image_path,
+                    "--job-dir",
+                    self.job_dir,
+                )
             )
-        )
+        except subprocess.CalledProcessError as exc:
+            raise PrepareError(
+                f"Image download failed with exit code {exc.returncode}."
+                " See above for more details."
+            ) from exc
         image_format, _, _ = self.image_spec["image_format"].partition("+")
         self.packer_vars["use_backing_file"] = image_format == "qcow2"
         self.packer_vars["iso_url"] = f"file://{pathname2url(self.image_path)}"
@@ -282,15 +292,21 @@ class QemuBuildDirGenerator(BuildDirGenerator):
             self._prepare_linux_raspi3b_specific_config()
 
     def _prepare_linux_raspi3b_specific_config(self) -> None:
-        subprocess.check_call(
-            (
-                sys.executable,
-                "-m",
-                "red_install_tests.cmd.prepare_raspi_img",
-                self.image_path,
-                self.build_dir,
+        try:
+            subprocess.check_call(
+                (
+                    sys.executable,
+                    "-m",
+                    "red_install_tests.cmd.prepare_raspi_img",
+                    self.image_path,
+                    self.build_dir,
+                )
             )
-        )
+        except subprocess.CalledProcessError as exc:
+            raise PrepareError(
+                f"Raspberry Pi image preparation failed with exit code {exc.returncode}."
+                " See above for more details."
+            ) from exc
         network_config = {
             "version": 2,
             "ethernets": {
@@ -426,7 +442,11 @@ def prepare_build_dir(
         shutil.rmtree(generator.build_dir)
     os.makedirs(generator.build_dir)
 
-    generator.prepare()
+    try:
+        generator.prepare()
+    except PrepareError as exc:
+        print(str(exc))
+        raise SystemExit(1) from None
     generator.save_packer_vars()
 
     print("Build directory prepared.")
