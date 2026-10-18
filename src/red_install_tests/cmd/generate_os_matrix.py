@@ -143,6 +143,7 @@ def main(args: argparse.Namespace, /) -> None:
                 spec = generate_image_spec(location)
                 job_config = JobConfig(image_spec=spec, install_instructions=install_instructions)
                 matrix.append(job_config.to_json_dict())
+        matrix.sort(key=lambda cfg: cfg["image_spec"]["name"])
 
         missing_patterns = set(patterns) - found_patterns
         if missing_patterns:
