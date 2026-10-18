@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -92,10 +93,15 @@ def main(args: argparse.Namespace, /) -> None:
         with log_group(f"Build {job_config.image_spec['name']} - attempt {attempt}"):
             try:
                 cp = subprocess.run(
-                    ("packer", "build", *args.extra_packer_args, build_dir), env=env
+                    ("packer", "build", "-force", *args.extra_packer_args, build_dir), env=env
                 )
             except KeyboardInterrupt:
                 raise SystemExit(2) from None
+            finally:
+                # sometimes Packer doesn't cleanup its output directory, let's do it ourselves
+                output_dir = os.path.join(build_dir, "output")
+                if os.path.exists(output_dir):
+                    shutil.rmtree(output_dir)
 
             if not cp.returncode:
                 break
