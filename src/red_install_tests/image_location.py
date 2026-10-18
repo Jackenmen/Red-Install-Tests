@@ -2,6 +2,8 @@ import re
 from typing import Any, Final, Literal, NotRequired, ReadOnly
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
+import jsonquerylang
+import niquests
 from lxml import etree
 from typing_extensions import TypedDict
 
@@ -48,7 +50,9 @@ BootModeType = Literal["bios", "uefi", "uefi-secure-boot"]
 
 
 class _BaseImageLocation(TypedDict):
-    download_type: ReadOnly[Literal["checksum-file", "direct-url", "html", "tart-image"]]
+    download_type: ReadOnly[
+        Literal["checksum-file", "direct-url", "html", "json-file", "tart-image"]
+    ]
     name: str
     os: ReadOnly[NotRequired[OsType]]
     arch: ReadOnly[NotRequired[ArchType]]
@@ -92,6 +96,13 @@ class _HtmlImageLocationChecksumValue(_BaseHtmlImageLocation, closed=True):
 HtmlImageLocation = _HtmlImageLocationChecksumFile | _HtmlImageLocationChecksumValue
 
 
+class JsonFileImageLocation(_DiskImageLocation, closed=True):
+    download_type: Literal["json-file"]
+    url_json_query: str
+    checksum_type: NotRequired[ChecksumType]
+    checksum_json_query: str
+
+
 class TartImageLocation(_BaseImageLocation, closed=True):
     download_type: Literal["tart-image"]
     os: Literal["darwin"]
@@ -100,7 +111,11 @@ class TartImageLocation(_BaseImageLocation, closed=True):
 
 
 ImageLocation = (
-    ChecksumFileImageLocation | DirectUrlImageLocation | HtmlImageLocation | TartImageLocation
+    ChecksumFileImageLocation
+    | DirectUrlImageLocation
+    | HtmlImageLocation
+    | JsonFileImageLocation
+    | TartImageLocation
 )
 
 
@@ -238,6 +253,51 @@ def _generate_image_spec_from_direct_url(location: DirectUrlImageLocation) -> Di
     return _create_disk_image_spec(location, url=location["url"], checksum=location["checksum"])
 
 
+def _generate_image_spec_from_json_file(location: JsonFileImageLocation) -> DiskImageSpec:
+    url_json_query = jsonquerylang.compile(jsonquerylang.parse(location["url_json_query"]))
+    url = location["url"]
+    checksum_type = location.get("checksum_type", "sha256")
+
+    r = http.get(url)
+    try:
+        data = r.json()
+    except niquests.JSONDecodeError as exc:
+        raise RuntimeError(f"could not decode response from URL: {url}") from exc
+
+    download_url = url_json_query(data)
+    if download_url is None:
+        raise RuntimeError(
+            "did not find an item matching provided URL JSON Query"
+            f" ({location['url_json_query']!r}) in the JSON file at URL: {url}"
+        )
+    if not isinstance(download_url, str):
+        raise RuntimeError(
+            f"provided URL JSON Query ({location['url_json_query']!r})"
+            f" did not return a string when evaluated on the JSON file at URL: {url}"
+        )
+    download_url = urljoin(r.url or url, download_url)
+
+    checksum = ""
+    checksum_json_query = jsonquerylang.compile(
+        jsonquerylang.parse(location["checksum_json_query"])
+    )
+    checksum = checksum_json_query(data)
+    if checksum is None:
+        raise RuntimeError(
+            "did not find an item matching provided checksum JSON Query"
+            f" ({location['checksum_json_query']!r}) in the JSON file at URL: {url}"
+        )
+    if not isinstance(checksum, str):
+        raise RuntimeError(
+            f"provided checksum JSON Query ({location['checksum_json_query']!r})"
+            f" did not return a string when evaluated on the JSON file at URL: {url}"
+        )
+
+    return _create_disk_image_spec(
+        location, url=download_url, checksum=f"{checksum_type}:{checksum}"
+    )
+
+
 def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec:
     url_xpath = etree.XPath(location["url_xpath"])
     url = location["url"]
@@ -309,6 +369,8 @@ def generate_image_spec(location: ImageLocation) -> ImageSpec:
         return _generate_image_spec_from_direct_url(location)
     if location["download_type"] == "html":
         return _generate_image_spec_from_html(location)
+    if location["download_type"] == "json-file":
+        return _generate_image_spec_from_json_file(location)
     if location["download_type"] == "tart-image":
         return _generate_image_spec_from_tart_image(location)
     raise ValueError("Unknown download type")

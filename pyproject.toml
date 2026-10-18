@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "cryptography",
+    "jsonquerylang==2.1.0",
     "lxml",
     "niquests[http3,speedups]",
     "platformdirs",
