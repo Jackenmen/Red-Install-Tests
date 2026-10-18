@@ -97,6 +97,7 @@ def _process_commands(commands: list[str]) -> None:
 def main(args: argparse.Namespace, /) -> None:
     red_repo_dir = os.path.join(args.run_dir, "repos", "Red-DiscordBot")
     matrix = []
+    matrix_instructions = {}
     run_config = get_run_config(args.run_dir)
     patterns = set(args.patterns or run_config.patterns or ["*"])
     found_patterns = set()
@@ -126,10 +127,11 @@ def main(args: argparse.Namespace, /) -> None:
             with open(entry.path, encoding="utf-8") as fp:
                 data = json.load(fp)
 
+            install_instructions = _process_prompts(data["prompts"])
+            matrix_instructions[entry.name] = install_instructions
             if not data.get("os_image_locations"):
                 continue
 
-            install_instructions = _process_prompts(data["prompts"])
             for image_name, location in data["os_image_locations"].items():
                 skip = True
                 for pat in patterns:
@@ -153,7 +155,11 @@ def main(args: argparse.Namespace, /) -> None:
             )
 
         with open(os.path.join(args.run_dir, OS_MATRIX_FILENAME), "w", encoding="utf-8") as fp:
-            json.dump(matrix, fp, separators=(",", ":"))
+            json.dump(
+                {"matrix": matrix, "instructions": matrix_instructions},
+                fp,
+                separators=(",", ":"),
+            )
 
 
 if __name__ == "__main__":

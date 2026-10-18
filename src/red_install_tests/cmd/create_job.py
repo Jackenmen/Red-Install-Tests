@@ -28,7 +28,7 @@ def main(args: argparse.Namespace, /) -> None:
     if len(patterns) == 1 and not any(c in patterns[0] for c in ("*", "?", "[")):
         job_name = patterns[0]
         with open(os.path.join(args.run_dir, OS_MATRIX_FILENAME), encoding="utf-8") as fp:
-            os_matrix = json.load(fp)
+            os_matrix = json.load(fp)["matrix"]
         for job_config in map(JobConfig.from_json_dict, os_matrix):
             if job_config.image_spec["name"] == job_name:
                 break

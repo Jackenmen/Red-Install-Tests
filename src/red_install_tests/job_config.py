@@ -55,7 +55,7 @@ def create_jobs(
     *patterns: str, run_dir: str, jobs_dir: str | None = None, allow_emulation: bool = True
 ) -> None:
     with open(os.path.join(run_dir, OS_MATRIX_FILENAME), encoding="utf-8") as fp:
-        os_matrix = json.load(fp)
+        os_matrix = json.load(fp)["matrix"]
 
     found_patterns = set()
     jobs = {}
