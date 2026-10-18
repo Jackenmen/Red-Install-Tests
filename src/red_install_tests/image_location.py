@@ -1,5 +1,6 @@
 import base64
 import re
+from collections.abc import Callable, Hashable
 from typing import Any, Final, Literal, NotRequired, ReadOnly, assert_never
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
@@ -191,13 +192,55 @@ def _create_disk_image_spec(
     }
 
 
+def _get_sort_keys_from_pattern(
+    pattern: re.Pattern[str],
+) -> tuple[tuple[str, Callable[[str], Hashable], bool], ...]:
+    sort_keys_map = {}
+    for group_name in pattern.groupindex:
+        if not group_name.startswith("sort_key_"):
+            continue
+        try:
+            raw_sort_index, type_name, sort_direction = group_name[len("sort_key_") :].split(
+                "_", 2
+            )
+        except ValueError:
+            raise ValueError(
+                f"sort key group name {group_name} does not follow the expected format:"
+                " sort_key_<index>_(str|int)_(asc|desc)>)"
+            ) from None
+        sort_index = int(raw_sort_index)
+        if sort_index < 0:
+            raise ValueError(f"sort key group {group_name} contains a negative index")
+        if sort_index in sort_keys_map:
+            raise ValueError("multiple sort keys have the same index")
+        converter: Callable[[str], Hashable]
+        match type_name:
+            case "int":
+                converter = int
+            case "str":
+                converter = str
+            case _:
+                raise ValueError(f"unexpected value type in sort key group {group_name}")
+        match sort_direction:
+            case "asc":
+                reverse = False
+            case "desc":
+                reverse = True
+            case _:
+                raise ValueError(f"unexpected sort direction in sort key group {group_name}")
+        sort_keys_map[sort_index] = (group_name, converter, reverse)
+    return tuple(value for key, value in sorted(sort_keys_map.items()))
+
+
 def _extract_checksum(
     url: str, *, checksum_style: ChecksumStyle, filename_pattern: str
 ) -> tuple[str, str, str]:
     r = http.get(url)
     checksum_pattern = _GNU_CHECKSUM_PATTERN if checksum_style == "gnu" else _BSD_CHECKSUM_PATTERN
     filename_re = re.compile(filename_pattern)
-    matched_files = []
+    sort_keys = _get_sort_keys_from_pattern(filename_re)
+
+    matched_files = {}
     checksum_count = 0
     if not r.text:
         raise RuntimeError(f"could not decode response from URL: {url}")
@@ -210,27 +253,35 @@ def _extract_checksum(
             continue
         checksum_count += 1
         filename = match.group("filename")
-        if filename_re.search(filename):
-            matched_files.append((filename, match.group("checksum")))
+        filename_match = filename_re.search(filename)
+        if filename_match is not None:
+            groups = tuple(converter(filename_match[key]) for key, converter, _ in sort_keys)
+            if groups in matched_files:
+                raise RuntimeError(
+                    f"At least 2 files matched by the specified pattern ({filename_re!r})"
+                    f" returned the same sort key groups in the file at URL: {url}\n"
+                    "If you're expecting to match multiple files, make sure that the pattern"
+                    " includes sort key groups (named groups in the following format:"
+                    " sort_key_<index>_(str|int)_(asc|desc)>) that uniquely identify that file."
+                )
+            matched_files[groups] = (filename, match.group("checksum"))
 
     if not checksum_count:
         raise RuntimeError(
             f"could not find any {checksum_style.upper()}-style checksums"
             f" in the file found at URL: {url}"
         )
-
     if not matched_files:
         raise RuntimeError(
             f"could not find any files matching the specified pattern ({filename_re!r})"
             f" in the file at URL: {url}"
         )
-    if len(matched_files) > 1:
-        raise RuntimeError(
-            f"more than one file matched the specified pattern ({filename_re!r})"
-            f" in the file at URL: {url}"
-        )
 
-    filename, checksum = matched_files.pop()
+    sorted_matched_files = [(groups, *values) for groups, values in matched_files.items()]
+    for idx, (_, _, reverse) in reversed([*enumerate(sort_keys)]):
+        sorted_matched_files.sort(key=lambda tup: tup[0][idx], reverse=reverse)
+
+    _, filename, checksum = sorted_matched_files[0]
     parsed_url = urlsplit(r.url or url)
     base_path, _, _ = parsed_url.path.rpartition("/")
     url = urlunsplit(parsed_url._replace(path=f"{base_path}/{filename}"))
