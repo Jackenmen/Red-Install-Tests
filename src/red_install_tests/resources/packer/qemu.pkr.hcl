@@ -96,7 +96,18 @@ locals {
   qemu_args = concat(
     local.machine_type == "raspi3b" ? [] : [
       ["-device", "qemu-xhci"],
-      ["-device", "virtio-gpu-pci"],
+      # To avoid issues with multiple displays being detected by the OS and us being able to
+      # see only one of them through VNC, we only configure a single display device.
+      # On x86-64, we can use a modern virtio-based display device - virtio-vga.
+      # This is identical to virtio-gpu-pci (also known as virtio-gpu) device
+      # except for being VGA compatible which matters on systems that don't have
+      # virtio-gpu drivers (i.e. Windows until we install them).
+      # On aarch64, VGA isn't really supported so, if we want to see the display the whole time,
+      # the best we can do is resorting to ramfb which will be presented to the OS
+      # as a UEFI GOP framebuffer.
+      # Ref: https://www.kraxel.org/blog/2019/09/display-devices-in-qemu/
+      ["-device", local.is_x86_64 ? "virtio-vga" : "ramfb"],
+      ["-vga", "none"],
     ],
     [
       ["-machine", "type=${local.machine_type},accel=hvf:kvm:whpx:tcg"],
