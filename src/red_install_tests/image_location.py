@@ -177,7 +177,7 @@ def _create_disk_image_spec(
 
 def _get_checksum(
     url: str, *, checksum_style: ChecksumStyle, filename_pattern: str
-) -> tuple[str, str]:
+) -> tuple[str, str, str]:
     r = http.get(url)
     checksum_pattern = _GNU_CHECKSUM_PATTERN if checksum_style == "gnu" else _BSD_CHECKSUM_PATTERN
     filename_re = re.compile(filename_pattern)
@@ -213,25 +213,25 @@ def _get_checksum(
             f"more than one file matched the specified pattern ({filename_re!r})"
             f" in the file at URL: {url}"
         )
-    return matched_files.pop()
+
+    filename, checksum = matched_files.pop()
+    parsed_url = urlsplit(r.url or url)
+    base_path, _, _ = parsed_url.path.rpartition("/")
+    url = urlunsplit(parsed_url._replace(path=f"{base_path}/{filename}"))
+
+    return (url, filename, checksum)
 
 
 def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation) -> DiskImageSpec:
     url = location["url"]
     checksum_type = location.get("checksum_type", "sha256")
-    filename, checksum = _get_checksum(
+    file_url, _, checksum = _get_checksum(
         url,
         checksum_style=location.get("checksum_style", "gnu"),
         filename_pattern=location["filename_pattern"],
     )
-    parsed_url = urlsplit(url)
-    base_path, _, _ = parsed_url.path.rpartition("/")
 
-    return _create_disk_image_spec(
-        location,
-        url=urlunsplit(parsed_url._replace(path=f"{base_path}/{filename}")),
-        checksum=f"{checksum_type}:{checksum}",
-    )
+    return _create_disk_image_spec(location, url=file_url, checksum=f"{checksum_type}:{checksum}")
 
 
 def _generate_image_spec_from_direct_url(location: DirectUrlImageLocation) -> DiskImageSpec:
@@ -278,7 +278,7 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
         parsed_download_url = urlsplit(download_url)
         _, _, download_filename = parsed_download_url.path.rpartition("/")
 
-        _, checksum = _get_checksum(
+        _, _, checksum = _get_checksum(
             checksum_file_url,
             checksum_style=location.get("checksum_style", "gnu"),
             filename_pattern=re.escape(download_filename),
