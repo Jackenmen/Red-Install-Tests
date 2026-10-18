@@ -20,17 +20,16 @@ class VNCScreenshotThread(threading.Thread):
         tmp_screenshot_path = f"{self.screenshot_path}.tmp"
         # ensure VNC server is up by waiting a bit
         time.sleep(1)
-        client = api.connect(self.vnc_address, self.vnc_password)
-        client.timeout = 1
         try:
             while not self._stop.wait(1):
                 try:
-                    client.captureScreen(tmp_screenshot_path, format="png")
+                    with api.connect(self.vnc_address, self.vnc_password) as client:
+                        client.timeout = 1.0
+                        client.captureScreen(tmp_screenshot_path, format="png")
                 except TimeoutError:
                     continue
                 os.rename(tmp_screenshot_path, self.screenshot_path)
         finally:
-            client.disconnect()
             api.shutdown()
 
     def stop(self) -> None:
