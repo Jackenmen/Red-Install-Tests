@@ -253,7 +253,7 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
             f"did not find any elements matching provided URL XPath ({url_xpath!r})"
             f" in the HTML file at URL: {url}"
         )
-    download_url = urljoin(url, download_url)
+    download_url = urljoin(r.url or url, download_url)
 
     checksum = ""
     if xpath := location.get("checksum_xpath"):
@@ -273,7 +273,7 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
                 f"did not find any elements matching provided checksum file URL XPath ({xpath!r})"
                 f" in the HTML file at URL: {url}"
             )
-        checksum_file_url = urljoin(url, _xpath_string(checksum_file_url))
+        checksum_file_url = urljoin(r.url or url, _xpath_string(checksum_file_url))
 
         parsed_download_url = urlsplit(download_url)
         _, _, download_filename = parsed_download_url.path.rpartition("/")
