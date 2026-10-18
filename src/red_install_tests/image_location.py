@@ -1,5 +1,6 @@
+import base64
 import re
-from typing import Any, Final, Literal, NotRequired, ReadOnly
+from typing import Any, Final, Literal, NotRequired, ReadOnly, assert_never
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import jsonquerylang
@@ -190,7 +191,7 @@ def _create_disk_image_spec(
     }
 
 
-def _get_checksum(
+def _extract_checksum(
     url: str, *, checksum_style: ChecksumStyle, filename_pattern: str
 ) -> tuple[str, str, str]:
     r = http.get(url)
@@ -237,10 +238,36 @@ def _get_checksum(
     return (url, filename, checksum)
 
 
+def _normalize_checksum(checksum_type: ChecksumType, checksum: str) -> str:
+    match checksum_type:
+        case "sha256":
+            expected_length = 64
+        case "sha512":
+            expected_length = 128
+        case _ as unreachable:
+            assert_never(unreachable)
+
+    checksum_parts = checksum.split(":", 1)
+    checksum = checksum_parts[-1]
+    if len(checksum_parts) == 2 and checksum_parts[0] != checksum_type:
+        raise ValueError(
+            f"Found checksum declares itself as {checksum_parts[0]}"
+            f" but {checksum_type} was expected"
+        )
+
+    if len(checksum) != expected_length:
+        # assume a base64-encoded checksum
+        missing_padding = len(checksum) % 4
+        if missing_padding:
+            checksum += "=" * (4 - missing_padding)
+        return base64.b64decode(checksum).hex()
+    return checksum
+
+
 def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation) -> DiskImageSpec:
     url = location["url"]
     checksum_type = location.get("checksum_type", "sha256")
-    file_url, _, checksum = _get_checksum(
+    file_url, _, checksum = _extract_checksum(
         url,
         checksum_style=location.get("checksum_style", "gnu"),
         filename_pattern=location["filename_pattern"],
@@ -292,6 +319,7 @@ def _generate_image_spec_from_json_file(location: JsonFileImageLocation) -> Disk
             f"provided checksum JSON Query ({location['checksum_json_query']!r})"
             f" did not return a string when evaluated on the JSON file at URL: {url}"
         )
+    checksum = _normalize_checksum(checksum_type, checksum)
 
     return _create_disk_image_spec(
         location, url=download_url, checksum=f"{checksum_type}:{checksum}"
@@ -324,7 +352,7 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
                 f"did not find any elements matching provided checksum XPath ({xpath!r})"
                 f" in the HTML file at URL: {url}"
             )
-        checksum = checksums[0]
+        checksum = _normalize_checksum(checksum_type, checksums[0])
     if xpath := location.get("checksum_file_url_xpath"):
         checksum_file_url_xpath = etree.XPath(xpath)
         checksum_file_url = _xpath_string(checksum_file_url_xpath(root))
@@ -338,7 +366,7 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
         parsed_download_url = urlsplit(download_url)
         _, _, download_filename = parsed_download_url.path.rpartition("/")
 
-        _, _, checksum = _get_checksum(
+        _, _, checksum = _extract_checksum(
             checksum_file_url,
             checksum_style=location.get("checksum_style", "gnu"),
             filename_pattern=re.escape(download_filename),
