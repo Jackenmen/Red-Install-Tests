@@ -395,9 +395,10 @@ jobs:
   generate-summary:
     name: Generate run summary
     needs:
+      - generate-matrix
       - test-install-instructions
       - test-install-instructions-macos
-    if: always()
+    if: always() && needs.generate-matrix.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       actions: read
