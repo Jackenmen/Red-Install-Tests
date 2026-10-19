@@ -121,7 +121,7 @@ ImageLocation = (
 )
 
 
-SpecType = Literal["disk", "tart"]
+SpecType = Literal["disk", "ssh", "tart"]
 
 
 class _BaseImageSpec(TypedDict):
@@ -145,6 +145,14 @@ class DiskImageSpec(_BaseImageSpec, closed=True):
     boot_mode: ReadOnly[BootModeType]
 
 
+class SSHImageSpec(_BaseImageSpec, closed=True):
+    spec_type: Literal["ssh"]
+    ssh_host: ReadOnly[str]
+    ssh_port: ReadOnly[int]
+    ssh_username: ReadOnly[str]
+    ssh_private_key_file: ReadOnly[str]
+
+
 class TartImageSpec(_BaseImageSpec, closed=True):
     spec_type: Literal["tart"]
     os: Literal["darwin"]
@@ -152,7 +160,7 @@ class TartImageSpec(_BaseImageSpec, closed=True):
     image: ReadOnly[str]
 
 
-ImageSpec = DiskImageSpec | TartImageSpec
+ImageSpec = DiskImageSpec | SSHImageSpec | TartImageSpec
 
 
 def _get_default_boot_mode(machine_type: MachineType) -> BootModeType:

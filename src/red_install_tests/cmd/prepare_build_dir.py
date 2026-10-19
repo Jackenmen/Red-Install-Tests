@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from red_install_tests.cli import add_deps_dir_option, parser_spec, run
-from red_install_tests.image_location import DiskImageSpec, ImageSpec, TartImageSpec
+from red_install_tests.image_location import DiskImageSpec, ImageSpec, SSHImageSpec, TartImageSpec
 from red_install_tests.job_config import JOBS_DIR, JobConfig, get_job_config
 from red_install_tests.resources import RESOURCES
 from red_install_tests.run_config import DEFAULT_RUN_DIR, RunConfig, get_run_config
@@ -359,6 +359,22 @@ class QemuBuildDirGenerator(BuildDirGenerator):
         ]
 
 
+class SSHBuildDirGenerator(BuildDirGenerator):
+    @property
+    def image_spec(self) -> SSHImageSpec:
+        image_spec = self.job_config.image_spec
+        assert image_spec["spec_type"] == "ssh"
+        return image_spec
+
+    def prepare(self) -> None:
+        super().prepare()
+        _copy_resource("packer/ssh.pkr.hcl", self.build_dir)
+        self.packer_vars["ssh_host"] = self.image_spec["ssh_host"]
+        self.packer_vars["ssh_port"] = self.image_spec["ssh_port"]
+        self.packer_vars["ssh_username"] = self.image_spec["ssh_username"]
+        self.packer_vars["ssh_private_key_file"] = self.image_spec["ssh_private_key_file"]
+
+
 class TartBuildDirGenerator(BuildDirGenerator):
     @property
     def image_spec(self) -> TartImageSpec:
@@ -418,6 +434,8 @@ def prepare_build_dir(
     generator_cls: type[BuildDirGenerator]
     if image_spec["spec_type"] == "disk":
         generator_cls = QemuBuildDirGenerator
+    elif image_spec["spec_type"] == "ssh":
+        generator_cls = SSHBuildDirGenerator
     elif image_spec["spec_type"] == "tart":
         generator_cls = TartBuildDirGenerator
     else:
