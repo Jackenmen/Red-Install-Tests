@@ -48,6 +48,7 @@ jobs:
     outputs:
       run-config: ${{ steps.generate-run.outputs.run-config }}
       os-matrix: ${{ steps.generate-run.outputs.os-matrix }}
+      macos-matrix: ${{ steps.generate-run.outputs.macos-matrix }}
 
     steps:
       - name: Checkout the repository
@@ -84,9 +85,19 @@ jobs:
             inputs+=(--pr "$INPUTS_PULL_REQUEST")
           fi
           hatch run generate-bare-run "${inputs[@]}"
-          # macOS does not support nested virtualization so we have to skip these for now:
-          # https://github.com/actions/runner-images/issues/13505
           (echo -n 'run-config=' && cat os-build-run/run_config.json && echo) >> "$GITHUB_OUTPUT"
+          # macOS does not support nested virtualization so we have to skip Tart-based images:
+          # https://github.com/actions/runner-images/issues/13505
+          # Instead, we'll run these directly on the GH Actions runner.
+          # Below code generates macOS matrix based on the main OS matrix
+          # and then excludes them from the main OS matrix.
+          macos_matrix='[]'
+          for os_name in macos-14 macos-15 macos-26; do
+            if jq -e '.matrix | any(.image_spec.name == $image_name)' --arg image_name "$os_name" os-build-run/os_matrix.json; then
+              macos_matrix=$(echo "$macos_matrix" | jq -c '. += [$os_name]' --arg os_name "$os_name")
+            fi
+          done
+          echo "macos-matrix=$macos_matrix" >> "$GITHUB_OUTPUT"
           (echo -n 'os-matrix=' && jq -c '.matrix |= map(select(.image_spec.os != "darwin"))' os-build-run/os_matrix.json) >> "$GITHUB_OUTPUT"
 
       - name: Add run configuration to workflow summary
@@ -123,6 +134,109 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
             echo '</details>' >> "$GITHUB_STEP_SUMMARY"
           done < <(jq -c '.matrix[]' os-build-run/os_matrix.json)
+
+  test-install-instructions-macos:
+    name: ${{ matrix.os }} - Test install instructions
+    needs: generate-matrix
+    if: needs.generate-matrix.outputs.macos-matrix != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.generate-matrix.outputs.macos-matrix) }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6
+
+      # Before performing steps in GH Actions following steps are performed first:
+      # 1. Remove JAVA_HOME and symlinks used by /usr/libexec/java_home to find Java
+      - name: Perform Actions runner system pre-cleanup
+        run: |-
+          sed -i '' -E 's/^(export JAVA_HOME[^=]*=).*/\1/' ~/.bashrc
+          sudo rm -f /Library/Java/JavaVirtualMachines/Temurin-Hotspot-*.jdk
+
+      - name: Setup SSH server
+        run: |
+          mkdir -p ~/ssh_server/etc/ssh
+          ssh-keygen -t ed25519 -N '' -f ~/ssh_server/ssh_key
+          cat ~/ssh_server/ssh_key.pub >> ~/ssh_server/authorized_keys
+          ssh-keygen -A -f ~/ssh_server
+          echo 'Port 2222' >> ~/ssh_server/etc/ssh/sshd_config
+          echo "HostKey $HOME/ssh_server/etc/ssh/ssh_host_rsa_key" >> ~/ssh_server/etc/ssh/sshd_config
+          echo "HostKey $HOME/ssh_server/etc/ssh/ssh_host_ecdsa_key" >> ~/ssh_server/etc/ssh/sshd_config
+          echo "HostKey $HOME/ssh_server/etc/ssh/ssh_host_ed25519_key" >> ~/ssh_server/etc/ssh/sshd_config
+          echo "PidFile $HOME/ssh_server/etc/ssh/sshd.pid" >> ~/ssh_server/etc/ssh/sshd_config
+          echo 'UsePAM yes' >> ~/ssh_server/etc/ssh/sshd_config
+          echo "AllowUsers $USER" >> ~/ssh_server/etc/ssh/sshd_config
+          echo "AuthorizedKeysFile $HOME/ssh_server/authorized_keys" >> ~/ssh_server/etc/ssh/sshd_config
+
+      - name: Run SSH server
+        id: run-ssh-server
+        background: true
+        run: |
+          /usr/sbin/sshd -o LogLevel=DEBUG3 -ef ~/ssh_server/etc/ssh/sshd_config -D &
+
+      - name: Prepare job directory
+        env:
+          RUN_CONFIG: ${{ needs.generate-matrix.outputs.run-config }}
+          OS_MATRIX: ${{ needs.generate-matrix.outputs.os-matrix }}
+          SPEC_NAME: ${{ matrix.os }}
+          SPEC_ARCH: ${{ case(runner.arch == 'X64', 'x86_64', 'aarch64') }}
+        run: |
+          mkdir os-build-run
+          echo "$RUN_CONFIG" > os-build-run/run_config.json
+          install_instructions=$(echo "$OS_MATRIX" | jq -c '.instructions."mac.json"')
+          jq -n '{image_spec: $ARGS.named, install_instructions: $instructions}' \
+            --arg spec_type ssh \
+            --arg name "$SPEC_NAME" \
+            --arg os darwin \
+            --arg arch "$SPEC_ARCH" \
+            --arg expected_java_version 25 \
+            --arg ssh_host 127.0.0.1 \
+            --arg ssh_port 2222 \
+            --arg ssh_username "$USER" \
+            --arg ssh_private_key_file ~/ssh_server/ssh_key \
+            --argjson instructions "$install_instructions" \
+            > os-build-run/job_config.json
+          jq . os-build-run/job_config.json
+
+      - name: Install Hatch
+        uses: pypa/hatch@install
+
+      - name: Download builder requirements
+        run: |
+          hatch run download-builder-requirements
+
+      - name: Prepare build directory
+        run: hatch run prepare-build-dir
+
+      - name: Build
+        id: build
+        env:
+          PACKER_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          hatch run build
+
+      - name: Stop SSH server
+        cancel: run-ssh-server
+
+      - name: Collect logs
+        id: collect-logs
+        env:
+          IMAGE_NAME: ${{ matrix.os }}
+        if: always() && contains(fromJSON('["success", "failure"]'), steps.build.conclusion)
+        run: |
+          cp os-build-run/packer-build/packer-1.log "${IMAGE_NAME}-packer-1.log"
+
+      - name: Upload Packer logs
+        if: always() && steps.collect-logs.conclusion == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.os }}-packer-1.log
+          archive: false
 
   test-install-instructions:
     name: ${{ matrix.image_spec.name }} - Test install instructions
@@ -280,7 +394,9 @@ jobs:
 
   generate-summary:
     name: Generate run summary
-    needs: test-install-instructions
+    needs:
+      - test-install-instructions
+      - test-install-instructions-macos
     if: always()
     runs-on: ubuntu-latest
     permissions:
