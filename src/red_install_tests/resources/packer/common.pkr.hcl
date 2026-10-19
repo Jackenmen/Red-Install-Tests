@@ -89,7 +89,7 @@ locals {
   cmd_elevated_execute_command = replace(
     local.cmd_execute_command, local.gsudo_drop_elevation_command, ""
   )
-  tmp_dir = var.os == "windows" ? "C:/Users/packer/AppData/Local/Temp" : "/tmp"
+  tmp_dir = var.os == "windows" ? "C:/Users/${local.username}/AppData/Local/Temp" : "/tmp"
   tmp_dir_winsep = var.os == "windows" ? replace(local.tmp_dir, "/", "\\") : local.tmp_dir
   default_unix_shell = var.os == "darwin" ? "zsh" : "bash"
 }
@@ -150,8 +150,8 @@ build {
             ? local.source_name
             : ""
         ) = {
-          elevated_user = "packer"
-          elevated_password = "packer"
+          elevated_user = local.username
+          elevated_password = local.username
           remote_path = "${local.tmp_dir}/script-${uuidv4()}.ps1"
           remote_env_var_path = "${local.tmp_dir}/packer-ps-env-vars-${uuidv4()}.ps1"
         }

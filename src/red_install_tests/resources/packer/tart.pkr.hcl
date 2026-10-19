@@ -17,6 +17,7 @@ variable "headless" {
 }
 
 locals {
+  username = "admin"
   source_type = "tart-cli"
 }
 
@@ -36,6 +37,6 @@ source "tart-cli" "tests" {
   headless = var.headless
 
   # cloud-init configuration
-  ssh_username = "admin"
+  ssh_username = local.username
   ssh_password = "admin"
 }

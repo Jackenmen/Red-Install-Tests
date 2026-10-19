@@ -15,6 +15,7 @@ variable "ssh_private_key_file" {
 }
 
 locals {
+  username = var.ssh_username
   source_type = "null"
 }
 

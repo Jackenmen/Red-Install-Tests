@@ -118,6 +118,7 @@ locals {
     ],
     var.extra_qemu_args,
   )
+  username = "packer"
   source_type = "qemu"
 }
 
@@ -154,7 +155,7 @@ source "qemu" "tests" {
   floppy_files = var.floppy_files
   cd_content = local.machine_type == "raspi3b" ? null : var.cd_content
   cd_label = "cidata"
-  ssh_username = "packer"
+  ssh_username = local.username
 
   # Keystrokes to send over VNC, only needed on Windows in UEFI mode
   # to get through the "Press any key to boot from CD or DVD" prompt.
