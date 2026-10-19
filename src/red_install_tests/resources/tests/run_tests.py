@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import asyncio
+import getpass
 import os
 import shutil
 import subprocess
 import sys
 import tarfile
-import tempfile
 from io import BytesIO
 
 import aiohttp
@@ -26,8 +26,11 @@ async def main() -> None:
     package_spec = os.environ["RED_PACKAGE_SPEC"]
     red_install_tests_repo = os.getcwd()
 
+    tmp_dir = (
+        f"C:/Users/{getpass.getuser()}/AppData/Local/Temp" if sys.platform == "win32" else "/tmp"  # noqa: S108
+    )
     with subprocess.Popen(
-        (sys.executable, os.path.join(tempfile.gettempdir(), "generate_imports.py")),
+        (sys.executable, os.path.join(tmp_dir, "generate_imports.py")),
         stdout=subprocess.PIPE,
     ) as import_generator:
         subprocess.check_call((sys.executable, "-"), stdin=import_generator.stdout)
@@ -65,7 +68,7 @@ async def main() -> None:
     ):
         subprocess.run(args, check=True)
 
-    extension_project_dir = os.path.join(tempfile.gettempdir(), "extension-project")
+    extension_project_dir = os.path.join(tmp_dir, "extension-project")
     os.chdir(red_install_tests_repo)
     for args in (
         (sys.executable, "-m", "pip", "install", extension_project_dir),
