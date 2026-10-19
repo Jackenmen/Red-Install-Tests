@@ -240,6 +240,7 @@ jobs:
 
   test-install-instructions:
     name: ${{ matrix.image_spec.name }} - Test install instructions
+    if: toJSON(fromJSON(needs.generate-matrix.outputs.os-matrix).matrix) != '[]'
     needs: generate-matrix
     strategy:
       fail-fast: false
