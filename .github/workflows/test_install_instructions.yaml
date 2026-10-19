@@ -419,6 +419,7 @@ jobs:
               --jq '
                 .jobs[]
                 | select(.name | endswith(" - Test install instructions"))
+                | select(.name | startswith("${{ '${{' }}") | not)
                 | "\(.name | split(" ")[0]) \(.conclusion)"
               '
           )
