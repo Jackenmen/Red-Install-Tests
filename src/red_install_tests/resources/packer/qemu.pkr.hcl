@@ -109,7 +109,10 @@ locals {
       # anything to just use the VGA variant anyway).
       # On Linux aarch64, VGA isn't really supported so we just use virtio-gpu.
       # Ref: https://www.kraxel.org/blog/2019/09/display-devices-in-qemu/
-      ["-device", var.os == "windows" ? "ramfb" : (local.is_x86_64 ? "virtio-vga" : "virtio-gpu")],
+      #
+      # For consistency with defaults for ramfb, virtio resolution is set to 800x600:
+      # Ref: https://github.com/tianocore/edk2/blob/a34a0ef95496fe4d192b490bc40c734194ebf4c6/MdeModulePkg/MdeModulePkg.dec#L1820-L1828
+      ["-device", var.os == "windows" ? "ramfb" : join("", ["virtio-", local.is_x86_64 ? "vga" : "gpu", ",xres=800,yres=600"])],
       ["-vga", "none"],
     ],
     [
