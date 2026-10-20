@@ -88,7 +88,7 @@ def main(args: argparse.Namespace, /) -> None:
     env["PACKER_LOG"] = "1"
     for attempt in range(1, args.attempts + 1):
         log_file = os.path.join(build_dir, f"packer-{attempt}.log")
-        env["RED_INSTALL_TESTS_SCREENSHOT_PATH"] = os.path.join(build_dir, f"screen-{attempt}.png")
+        env["RED_INSTALL_TESTS_SCREENCAST_PATH"] = os.path.join(build_dir, f"screen-{attempt}.mkv")
         env["PACKER_LOG_PATH"] = log_file
         with log_group(f"Build {job_config.image_spec['name']} - attempt {attempt}"):
             try:
