@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
   <servicing/>
+  <!-- Consult configuration passes diagram: https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/how-configuration-passes-work?view=windows-11 -->
   <settings pass="windowsPE">
     <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <!-- Disable TPM checks -->
@@ -106,6 +107,37 @@
       <EnableLUA>false</EnableLUA>
     </component>
   </settings>
+  <settings pass="specialize">
+    <!-- Run commands *before* logged into the user account (and before it's created) -->
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Description>Display more detailed codes in BSODs</Description>
+          <Path>reg add "HKLM\SYSTEM\CurrentControlSet\Control\CrashControl" /v "DisplayParameters" /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Description>Turn on Emergency Management Services (EMS)</Description>
+          <Path>bcdedit /ems ON</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Description>Configure serial port for Emergency Management Services (EMS)</Description>
+          <Path>bcdedit /emssettings EMSPORT:1 EMSBAUDRATE:115200</Path>
+          <WillReboot>Always</WillReboot>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+    <!-- Set system timezone -->
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <TimeZone>UTC</TimeZone>
+    </component>
+    <!-- Skip automatic online activation -->
+    <component name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <SkipAutoActivation>true</SkipAutoActivation>
+    </component>
+  </settings>
   <settings pass="oobeSystem">
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <!-- Configure user account -->
@@ -147,16 +179,6 @@
           <Order>1</Order>
         </SynchronousCommand>
       </FirstLogonCommands>
-    </component>
-  </settings>
-  <settings pass="specialize">
-    <!-- Set system timezone -->
-    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <TimeZone>UTC</TimeZone>
-    </component>
-    <!-- Skip automatic online activation -->
-    <component name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <SkipAutoActivation>true</SkipAutoActivation>
     </component>
   </settings>
 </unattend>
