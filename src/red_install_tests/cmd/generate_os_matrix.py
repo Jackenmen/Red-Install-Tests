@@ -79,19 +79,28 @@ def _process_prompts(prompts: list[dict[str, Any]]) -> list[CmdBlockDict]:
 
 
 def _process_commands(commands: list[str]) -> None:
-    per_program_extra_args = {
+    per_cmd_extra_args = {
         "makepkg": "--noconfirm",
         "pacman": "--noconfirm",
+        "choco upgrade": "--no-progress",
     }
+    max_cmd_parts = max(cmd.count(" ") for cmd in per_cmd_extra_args) + 1
     for idx, command in enumerate(commands):
-        split_command = command.split(" ", 2)
-        prefix = program = split_command[0]
-        if program == "sudo" and len(split_command) > 1:
-            program = split_command[1]
-            prefix = " ".join(split_command[:2])
-        extra_args = per_program_extra_args.get(program)
-        if extra_args:
-            commands[idx] = f"{prefix} {extra_args}{command[len(prefix) :]}"
+        split_command = command.split(" ", max_cmd_parts + 1)
+
+        sudo_prefix = ""
+        if split_command[0] == "sudo":
+            sudo_prefix = "sudo "
+            split_command = split_command[1:]
+
+        for cmd_part_count in range(max_cmd_parts, 0, -1):
+            cmd = " ".join(split_command[:cmd_part_count])
+
+            extra_args = per_cmd_extra_args.get(cmd)
+            if extra_args:
+                prefix = f"{sudo_prefix}{cmd}"
+                commands[idx] = f"{prefix} {extra_args}{command[len(prefix) :]}"
+                break
 
 
 def main(args: argparse.Namespace, /) -> None:
