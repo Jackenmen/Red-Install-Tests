@@ -26,7 +26,7 @@ SW_OVMF_VERSION: Final = "2022.11-6+deb12u2"
 SW_PACKER_VERSION: Final = "1.15.3"
 SW_RPI_UTILS_VERSION: Final = "2026.6.3"
 SW_TART_VERSION: Final = "2.32.1"
-SW_VIRTIO_WIN_DRIVERS_VERSION: Final = "0.1.285-1"
+SW_VIRTIO_WIN_DRIVERS_VERSION: Final = "0.1.302-1"
 FILE_CHECKSUMS: Final = json.loads(
     RESOURCES.joinpath("builder_requirement_file_checksums.json").read_text()
 )

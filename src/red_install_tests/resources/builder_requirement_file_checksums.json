@@ -19,5 +19,5 @@
     "raspberrypi-utils-Windows-amd64-Release.zip": "sha256:61b60eb9159b67cfd2ce80e6045b5e5b34adcb0ed68b0f2088fd0b712b4fdb66",
     "raspberrypi-utils-Windows-arm64-Release.zip": "sha256:78a9afbb43acdcf21ce34fe1b24d6a042632a84199554de1d25d9ed5e1d85a2f",
     "tart.tar.gz": "sha256:8554ab4f7fc12afe52f9b7e3093a935673cbac737a83973d2db7a0683c814529",
-    "virtio-win-prewhql-0.1.zip": "sha256:db3b687b2863efc874e31520f3aed07fc106b1cad295dfa0a86f96855b0fc8ab"
+    "virtio-win-prewhql-0.1.zip": "sha256:f064f8a96ad645d15b47416a6e758ef35798eb28f2f65ab10dd217597e988f1f"
 }
