@@ -426,7 +426,7 @@ jobs:
               '
           )
 
-          artifacts_resp=$(gh api "/repos/{owner}/{repo}/actions/runs/$GITHUB_RUN_ID/artifacts")
+          artifacts_resp=$(gh api --paginate "/repos/{owner}/{repo}/actions/runs/$GITHUB_RUN_ID/artifacts")
 
           declare -A job_attempt_counts
           while read -r image_name attempt_count; do
