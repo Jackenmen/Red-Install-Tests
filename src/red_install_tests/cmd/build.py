@@ -27,6 +27,8 @@ TRANSIENT_ERROR_PATTERN = _compile_pattern(
         ui error: ==> (
             windows-([a-z0-9\-]+)\.[a-z]+\.tests:
             \ The system cannot find the path specified\.$
+            |((alma|amazon|oracle|rocky)-linux|centos|fedora)-([a-z0-9\-]+)\.[a-z]+\.tests:
+            \  +- nothing provides .+ needed by .+ from .+$
             |fedora-([a-z0-9\-]+)\.[a-z]+\.tests:
             \ >>> Status code: 503 for https://packages\.adoptium\.net
             |opensuse-tumbleweed-([a-z0-9\-]+)\.[a-z]+\.tests:
