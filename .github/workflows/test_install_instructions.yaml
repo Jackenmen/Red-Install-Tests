@@ -412,24 +412,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           declare -A job_conclusions
-          while read -r image_name conclusion; do
+          declare -A job_urls
+          while read -r image_name conclusion url; do
             job_conclusions[$image_name]="$conclusion"
+            job_urls[$image_name]="$url"
           done < <(
             gh run view "$GITHUB_RUN_ID" --json jobs \
               --jq '
                 .jobs[]
                 | select(.name | endswith(" - Test install instructions"))
                 | select(.name | startswith("${{ '${{' }}") | not)
-                | "\(.name | split(" / ")[-1] | split(" ")[0]) \(.conclusion)"
+                | "\(.name | split(" / ")[-1] | split(" ")[0]) \(.conclusion) \(.url)"
               '
           )
+
+          artifacts_resp=$(gh api "/repos/{owner}/{repo}/actions/runs/$GITHUB_RUN_ID/artifacts")
 
           declare -A job_attempt_counts
           while read -r image_name attempt_count; do
             job_attempt_counts[$image_name]="$attempt_count"
           done < <(
-            gh api "/repos/{owner}/{repo}/actions/runs/$GITHUB_RUN_ID/artifacts" \
-              --jq '[.artifacts[].name]
+            echo "$artifacts_resp" | jq -r \
+              '[.artifacts[].name]
                 | map(select(. | test("-packer-\\d.log")))
                 | group_by(.[:-13])
                 | sort_by(-(. | length), .)[]
@@ -437,15 +441,48 @@ jobs:
               '
           )
 
+          declare -A job_artifact_links
+          while read -r image_name artifact_links; do
+            job_artifact_links[$image_name]="$artifact_links"
+          done < <(
+            echo "$artifacts_resp" | jq -r \
+              '.artifacts
+                | map(select(.name | test("-packer-\\d.log|-screen-\\d.mkv")))
+                | group_by(.name[:-13])
+                | map({
+                    key: .[0].name[:-13],
+                    value: [. | sort_by(.name) | .[] | "[\(.name)](\(.archive_download_url))"]
+                  })
+                | sort_by(-(.value | length), .key)[]
+                | "\(.key) \(.value | join(" "))"
+              '
+          )
+
           echo '# Run summary' >> "$GITHUB_STEP_SUMMARY"
-          echo '| Image name | Conclusion | Attempt count |' >> "$GITHUB_STEP_SUMMARY"
-          echo '| --- | --- | --- |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Image name | Conclusion | Attempt count | Artifacts |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| --- | --- | --- | --- |' >> "$GITHUB_STEP_SUMMARY"
 
           for image_name in "${!job_conclusions[@]}"; do
             conclusion="${job_conclusions[$image_name]}"
+            url="${job_urls[$image_name]}"
+            case "$conclusion" in
+              success)
+                conclusion_emoji=":white_check_mark:"
+                ;;
+              cancelled)
+                conclusion_emoji=":no_entry_sign:"
+                ;;
+              failure)
+                conclusion_emoji=":x:"
+                ;;
+              *)
+                conclusion_emoji=":warning:"
+                ;;
+            esac
             attempt_count="${job_attempt_counts[$image_name]}"
             if [[ -z "$attempt_count" ]]; then
               attempt_count='0'
             fi
-            echo "| $image_name | $conclusion | $attempt_count |" >> "$GITHUB_STEP_SUMMARY"
+            artifact_links="${job_artifact_links[$image_name]}"
+            echo "| [$image_name]($url) | $conclusion_emoji $conclusion | $attempt_count | $artifact_links |" >> "$GITHUB_STEP_SUMMARY"
           done
