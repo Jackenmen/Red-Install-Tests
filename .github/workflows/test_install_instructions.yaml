@@ -428,8 +428,16 @@ jobs:
 
           artifacts_resp=$(gh api --paginate "/repos/{owner}/{repo}/actions/runs/$GITHUB_RUN_ID/artifacts")
 
+          # successful jobs should be shown after all the other jobs
+          image_names=()
+          successful_image_names=()
           declare -A job_attempt_counts
           while read -r image_name attempt_count; do
+            if [[ "${job_conclusions[$image_name]}" == 'success' ]]; then
+              successful_image_names+=("$image_name")
+            else
+              image_names+=("$image_name")
+            fi
             job_attempt_counts[$image_name]="$attempt_count"
           done < <(
             echo "$artifacts_resp" | jq -r \
@@ -440,6 +448,7 @@ jobs:
                 | "\(.[0][:-13]) \(. | length)"
               '
           )
+          image_names+=("${successful_image_names[@]}")
 
           declare -A job_artifact_links
           while read -r image_name artifact_links; do
@@ -462,7 +471,7 @@ jobs:
           echo '| Image name | Conclusion | Attempt count | Artifacts |' >> "$GITHUB_STEP_SUMMARY"
           echo '| --- | --- | --- | --- |' >> "$GITHUB_STEP_SUMMARY"
 
-          for image_name in "${!job_conclusions[@]}"; do
+          for image_name in "${image_names[@]}"; do
             conclusion="${job_conclusions[$image_name]}"
             url="${job_urls[$image_name]}"
             case "$conclusion" in
