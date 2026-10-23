@@ -1,4 +1,5 @@
 import argparse
+import sys
 from typing import Protocol
 
 from red_install_tests.cli import ParserSetupFunc
@@ -28,6 +29,11 @@ def _add_parser(subparsers: argparse._SubParsersAction, module: _CmdModule) -> N
 
 
 def main() -> None:
+    if sys.__stdout__ is not None:
+        sys.__stdout__.reconfigure(line_buffering=True)
+    if sys.__stderr__ is not None:
+        sys.__stderr__.reconfigure(line_buffering=True)
+
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
 
