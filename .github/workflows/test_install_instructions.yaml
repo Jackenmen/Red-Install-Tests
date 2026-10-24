@@ -208,7 +208,7 @@ jobs:
 
       - name: Download builder requirements
         run: |
-          hatch run download-builder-requirements
+          hatch run download-builder-requirements -- --job-dir os-build-run
 
       - name: Prepare build directory
         run: hatch run prepare-build-dir
@@ -309,13 +309,13 @@ jobs:
           if [[ -e /dev/kvm ]]; then
             sudo chown "$USER" /dev/kvm
           fi
-          hatch run download-builder-requirements
+          hatch run download-builder-requirements -- --job-dir os-build-run
 
       - name: Download builder requirements (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install qemu
-          hatch run download-builder-requirements
+          hatch run download-builder-requirements -- --job-dir os-build-run
 
       - name: Prepare build directory
         run: hatch run prepare-build-dir
