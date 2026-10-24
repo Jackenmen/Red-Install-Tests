@@ -495,3 +495,26 @@ jobs:
             artifact_links="${job_artifact_links[$image_name]}"
             echo "| [$image_name]($url) | $conclusion_emoji $conclusion | $attempt_count | $artifact_links |" >> "$GITHUB_STEP_SUMMARY"
           done
+
+          if [[ " ${array[@]} " == *' failed '* ]]; then
+            echo '# Failed jobs' >> "$GITHUB_STEP_SUMMARY"
+            for image_name in "${image_names[@]}"; do
+              conclusion="${job_conclusions[$image_name]}"
+              if [[ "$conclusion" == 'failed' ]]; then
+                echo "## $image_name" >> "$GITHUB_STEP_SUMMARY"
+                artifacts=$(mktemp -d)
+                gh run download --dir "$artifacts" --pattern "$image_name-packer-*.log"
+                attempt=0
+                for file in "$artifacts"/*.log; do
+                  attempt=$((attempt + 1))
+                  echo "### Attempt $attempt" >> "$GITHUB_STEP_SUMMARY"
+                  echo "```" >> "$GITHUB_STEP_SUMMARY"
+                  sed -n -E \
+                      's#([0-9]{4}/[0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) ui( error)?: (.+)#\1 \3#p' \
+                      "$file" \
+                    | tail -50 | ansi2txt >> "$GITHUB_STEP_SUMMARY"
+                  echo "```" >> "$GITHUB_STEP_SUMMARY"
+                done
+              fi
+            done
+          fi
