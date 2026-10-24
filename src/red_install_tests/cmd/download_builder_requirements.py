@@ -16,8 +16,8 @@ from urllib.parse import urlsplit
 import niquests
 
 from red_install_tests import http
-from red_install_tests.cli import add_deps_dir_option, parser_spec, run
-from red_install_tests.job_config import get_host_architecture
+from red_install_tests.cli import add_deps_dir_option, add_job_dir_option, parser_spec, run
+from red_install_tests.job_config import get_host_architecture, get_job_config
 from red_install_tests.resources import RESOURCES
 
 SW_7ZIP_VERSION: Final = "26.03"
@@ -310,16 +310,17 @@ class Downloader(_DownloaderBase):
         os.makedirs(self.bin_dir, exist_ok=True)
         os.makedirs(self.edk2_dir, exist_ok=True)
         reqs = sorted(reqs, key=list(self.REQUIREMENTS).index) if reqs else self.REQUIREMENTS
-        installed_reqs: set[str] = set()
+        self.installed_reqs = set()
         for req_name in reqs:
-            if req_name not in installed_reqs:
+            if req_name not in self.installed_reqs:
                 self.REQUIREMENTS[req_name](self)
-                installed_reqs.add(req_name)
+                self.installed_reqs.add(req_name)
 
 
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
     add_deps_dir_option(parser)
+    add_job_dir_option(parser)
     parser.add_argument(
         "requirements",
         metavar="requirement",
@@ -331,7 +332,26 @@ def setup_parser(parser: argparse.ArgumentParser, /) -> None:
 
 def main(args: argparse.Namespace, /) -> None:
     downloader = Downloader(args.deps_dir)
-    downloader.run(args.requirements)
+    if args.requirements or args.job_dir is None:
+        downloader.run(args.requirements)
+    else:
+        job_config = get_job_config(args.job_dir)
+        image_spec = job_config.image_spec
+        requirements = ["packer"]
+        if image_spec["spec_type"] == "disk":
+            if image_spec["arch"] == "x86_64":
+                requirements.append("ovmf")
+            else:
+                requirements.append("aavmf")
+            if image_spec["machine_type"] == "raspi3b":
+                requirements.append("7z")
+                requirements.append("raspberry_pi_utils")
+            if image_spec["os"] == "windows":
+                requirements.append("virtio_win_drivers")
+        elif image_spec["spec_type"] == "tart":
+            requirements.append("tart")
+
+        downloader.run(requirements)
 
 
 if __name__ == "__main__":
