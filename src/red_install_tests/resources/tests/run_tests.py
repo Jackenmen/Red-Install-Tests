@@ -53,7 +53,9 @@ async def main() -> None:
     if sys.platform == "win32":
         subprocess.run(("curl", "--head", url), check=True)
 
-    async with aiohttp.ClientSession() as session, session.get(url) as resp:
+    async with aiohttp.ClientSession(max_field_size=256 * 1024) as session, session.get(
+        url
+    ) as resp:
         fp = BytesIO(await resp.read())
 
         with tarfile.open(fileobj=fp, mode="r|gz") as tar:
