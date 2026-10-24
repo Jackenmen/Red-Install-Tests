@@ -102,6 +102,9 @@ build {
   provisioner "shell" {
     inline = ["cloud-init status --long --wait"]
     only = var.os == "linux" ? local.sources : [""]
+    // cloud-init shouldn't take long once we managed to SSH in
+    // so let's just timeout after a few minutes
+    timeout = "5m"
   }
 
   // Run provided install instructions.
