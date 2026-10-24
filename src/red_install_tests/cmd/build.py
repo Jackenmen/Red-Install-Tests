@@ -28,7 +28,10 @@ TRANSIENT_ERROR_PATTERN = _compile_pattern(
             windows-([a-z0-9\-]+)\.[a-z]+\.tests:
             \ The system cannot find the path specified\.$
             |((alma|amazon|oracle|rocky)-linux|centos|fedora)-([a-z0-9\-]+)\.[a-z]+\.tests:
-            \  +- nothing provides .+ needed by .+ from .+$
+            \  +- (
+                nothing provides .+ needed by .+ from .+$
+                |Curl error \((6|7|28|35|55|56)\):
+            )
             |fedora-([a-z0-9\-]+)\.[a-z]+\.tests:
             \ >>> Status code: 503 for https://packages\.adoptium\.net
             |opensuse-tumbleweed-([a-z0-9\-]+)\.[a-z]+\.tests:
