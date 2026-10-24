@@ -393,6 +393,43 @@ jobs:
           archive: false
           if-no-files-found: ignore
 
+      - name: Collect failure cloud-init logs
+        id: collect-failure-cloud-init-logs
+        env:
+          IMAGE_NAME: ${{ matrix.image_spec.name }}
+        if: >-
+          always()
+          && matrix.image_spec.os == 'linux'
+          && steps.build.conclusion == 'failure'
+          || steps.upload-packer-logs-for-attempt-2.outputs.artifact-id != null
+        run: |
+          cp os-build-run/packer-build/cloud-init-1.tar.gz "${IMAGE_NAME}-cloud-init-1.tar.gz"
+          cp os-build-run/packer-build/cloud-init-2.tar.gz "${IMAGE_NAME}-cloud-init-2.tar.gz" || true
+          cp os-build-run/packer-build/cloud-init-3.tar.gz "${IMAGE_NAME}-cloud-init-3.tar.gz" || true
+
+      - name: Upload failure cloud-init logs for attempt 1
+        if: always() && steps.collect-failure-cloud-init-logs.conclusion == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.image_spec.name }}-cloud-init-1.tar.gz
+          archive: false
+
+      - name: Upload failure cloud-init logs for attempt 2
+        if: always() && steps.collect-failure-cloud-init-logs.conclusion == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.image_spec.name }}-cloud-init-2.tar.gz
+          archive: false
+          if-no-files-found: ignore
+
+      - name: Upload failure cloud-init logs for attempt 3
+        if: always() && steps.collect-failure-cloud-init-logs.conclusion == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ matrix.image_spec.name }}-cloud-init-3.tar.gz
+          archive: false
+          if-no-files-found: ignore
+
   generate-summary:
     name: Generate run summary
     needs:
