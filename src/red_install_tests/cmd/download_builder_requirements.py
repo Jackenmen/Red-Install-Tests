@@ -20,13 +20,9 @@ from red_install_tests.cli import add_deps_dir_option, add_job_dir_option, parse
 from red_install_tests.job_config import get_host_architecture, get_job_config
 from red_install_tests.resources import RESOURCES
 
-SW_7ZIP_VERSION: Final = "26.03"
-SW_AAVMF_VERSION: Final = "2022.11-6+deb12u2"
-SW_OVMF_VERSION: Final = "2022.11-6+deb12u2"
-SW_PACKER_VERSION: Final = "1.15.3"
-SW_RPI_UTILS_VERSION: Final = "2026.6.3"
-SW_TART_VERSION: Final = "2.32.1"
-SW_VIRTIO_WIN_DRIVERS_VERSION: Final = "0.1.302-1"
+SW_VERSIONS: Final = json.loads(
+    RESOURCES.joinpath("builder_requirement_versions.json").read_text()
+)
 FILE_CHECKSUMS: Final = json.loads(
     RESOURCES.joinpath("builder_requirement_file_checksums.json").read_text()
 )
@@ -38,26 +34,24 @@ VALID_PLATFORM_KEYS: Final = {
     "linux_arm64",
 }
 IS_WINDOWS: Final = sys.platform == "win32"
-SW_7ZIP_BASE_URL: Final = f"https://github.com/ip7z/7zip/releases/download/{SW_7ZIP_VERSION}/%s"
+SW_7ZIP_BASE_URL: Final = "https://github.com/ip7z/7zip/releases/download/{version}/{filename}"
 SW_AAVMF_BASE_URL: Final = (
-    f"http://ftp.nl.debian.org/debian/pool/main/e/edk2/qemu-efi-aarch64_{SW_AAVMF_VERSION}_all.deb"
+    "http://ftp.nl.debian.org/debian/pool/main/e/edk2/qemu-efi-aarch64_{version}_all.deb"
 )
-SW_OVMF_BASE_URL: Final = (
-    f"http://ftp.nl.debian.org/debian/pool/main/e/edk2/ovmf_{SW_OVMF_VERSION}_all.deb"
-)
+SW_OVMF_BASE_URL: Final = "http://ftp.nl.debian.org/debian/pool/main/e/edk2/ovmf_{version}_all.deb"
 SW_PACKER_BASE_URL: Final = (
-    f"https://releases.hashicorp.com/packer/{SW_PACKER_VERSION}/packer_{SW_PACKER_VERSION}_%s.zip"
+    "https://releases.hashicorp.com/packer/{version}/packer_{version}_{platform}.zip"
 )
 SW_RPI_UTILS_BASE_URL: Final = (
-    f"https://github.com/Jackenmen/raspberrypi-utils/releases/download/v{SW_RPI_UTILS_VERSION}"
-    "/raspberrypi-utils-%s-%s-Release.zip"
+    "https://github.com/Jackenmen/raspberrypi-utils/releases/download/v{version}"
+    "/raspberrypi-utils-{os}-{arch}-Release.zip"
 )
 SW_TART_BASE_URL: Final = (
-    f"https://github.com/cirruslabs/tart/releases/download/{SW_TART_VERSION}/tart.tar.gz"
+    "https://github.com/cirruslabs/tart/releases/download/{version}/tart.tar.gz"
 )
 SW_VIRTIO_WIN_DRIVERS_URL: Final = (
     "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/virtio-win-pkg-scripts-input"
-    f"/virtio-win-{SW_VIRTIO_WIN_DRIVERS_VERSION}/virtio-win-prewhql-0.1.zip"
+    "/virtio-win-{version}/virtio-win-prewhql-0.1.zip"
 )
 
 
@@ -80,11 +74,11 @@ def _verify_hash(r: niquests.Response) -> niquests.Response:
 
 
 class _DownloaderBase:
-    REQUIREMENTS: ClassVar[dict[str, Callable[[Self], None]]] = {}
+    REQUIREMENTS: ClassVar[dict[str, Callable[[Self, str], None]]] = {}
 
     def __init_subclass__(cls) -> None:
         cls.REQUIREMENTS = {
-            attr_name[len("download_") :]: attr_value
+            attr_name[len("download_") :].replace("_", "-"): attr_value
             for attr_name, attr_value in cls.__dict__.items()
             if attr_name.startswith("download_")
         }
@@ -96,16 +90,16 @@ class Downloader(_DownloaderBase):
         self.bin_dir = os.path.join(deps_dir, "bin")
         self.edk2_dir = os.path.join(deps_dir, "edk2")
         self.drivers_dir = os.path.join(deps_dir, "drivers")
-        self.installed_reqs: set[str] = set()
+        self.installed_reqs: dict[str, str] = {}
 
     @property
     def bin_7z(self) -> str:
         return os.path.join(self.bin_dir, "7z.exe" if IS_WINDOWS else "7zz")
 
-    def _download_7z_win(self, base_filename: str) -> None:
+    def _download_7z_win(self, version: str, base_filename: str) -> None:
         with tempfile.TemporaryDirectory() as tmpdirname:
             extractor = os.path.join(tmpdirname, "7zr.exe")
-            url = SW_7ZIP_BASE_URL % "7zr.exe"
+            url = SW_7ZIP_BASE_URL.format(version=version, filename="7zr.exe")
             print(f"Fetching {url}...")
             r = _verify_hash(http.get(url))
             with open(extractor, "wb") as fp:
@@ -113,7 +107,7 @@ class Downloader(_DownloaderBase):
 
             plat = "arm64" if get_host_architecture() == "aarch64" else "x64"
             installer = os.path.join(tmpdirname, "7z-installer.exe")
-            url = SW_7ZIP_BASE_URL % f"{base_filename}{plat}.exe"
+            url = SW_7ZIP_BASE_URL.format(version=version, filename=f"{base_filename}{plat}.exe")
             print(f"Fetching {url}...")
             r = _verify_hash(http.get(url))
             with open(installer, "wb") as fp:
@@ -126,7 +120,7 @@ class Downloader(_DownloaderBase):
                     os.path.join(tmpdirname, filename), os.path.join(self.bin_dir, filename)
                 )
 
-    def _download_7z_unix(self, base_filename: str) -> None:
+    def _download_7z_unix(self, version: str, base_filename: str) -> None:
         match platform_key := (sys.platform, get_host_architecture()):
             case ("linux", "x86_64"):
                 filename = f"{base_filename}linux-x64.tar.xz"
@@ -136,21 +130,28 @@ class Downloader(_DownloaderBase):
                 filename = f"{base_filename}mac.tar.xz"
             case _:
                 raise RuntimeError(f"{platform_key} platform is not supported")
-        url = SW_7ZIP_BASE_URL % filename
+        url = SW_7ZIP_BASE_URL.format(version=version, filename=filename)
         print(f"Fetching {url}...")
         r = _verify_hash(http.get(url))
         with tarfile.open(fileobj=BytesIO(r.content or b"")) as archive:
             setattr(archive, "extraction_filter", getattr(tarfile, "data_filter", None))
             archive.extract("7zz", self.bin_dir)
 
-    def download_7z(self) -> None:
+    def download_7z(self, version: str) -> None:
         print("Downloading 7-zip...")
-        base_filename = f"7z{SW_7ZIP_VERSION.replace('.', '')}-"
+        base_filename = f"7z{version.replace('.', '')}-"
         if IS_WINDOWS:
-            self._download_7z_win(base_filename)
+            self._download_7z_win(version, base_filename)
         else:
-            self._download_7z_unix(base_filename)
+            self._download_7z_unix(version, base_filename)
         print("Downloaded.")
+
+    def _ensure_installed(self, req_name: str) -> None:
+        version = SW_VERSIONS[req_name]
+        if self.installed_reqs.get(req_name) == version:
+            return
+        self.REQUIREMENTS[req_name](self, version)
+        self.installed_reqs[req_name] = version
 
     def _download_deb(
         self,
@@ -160,9 +161,7 @@ class Downloader(_DownloaderBase):
         destination: str,
         files: Iterable[str],
     ) -> None:
-        if "7z" not in self.installed_reqs and not os.path.exists(self.bin_7z):
-            self.download_7z()
-            self.installed_reqs.add("7z")
+        self._ensure_installed("7z")
 
         print(f"Downloading {req_name}...")
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -202,10 +201,10 @@ class Downloader(_DownloaderBase):
 
         print("Downloaded.")
 
-    def download_aavmf(self) -> None:
+    def download_aavmf(self, version: str) -> None:
         self._download_deb(
             "AAVMF",
-            url=SW_AAVMF_BASE_URL,
+            url=SW_AAVMF_BASE_URL.format(version=version),
             destination=self.edk2_dir,
             files=(
                 f"./usr/share/AAVMF/AAVMF_{suffix}"
@@ -213,10 +212,10 @@ class Downloader(_DownloaderBase):
             ),
         )
 
-    def download_ovmf(self) -> None:
+    def download_ovmf(self, version: str) -> None:
         self._download_deb(
             "OVMF",
-            url=SW_OVMF_BASE_URL,
+            url=SW_OVMF_BASE_URL.format(version=version),
             destination=self.edk2_dir,
             files=(
                 f"./usr/share/OVMF/OVMF_{suffix}"
@@ -225,7 +224,7 @@ class Downloader(_DownloaderBase):
         )
         print("Downloaded.")
 
-    def download_packer(self) -> None:
+    def download_packer(self, version: str) -> None:
         print("Downloading Packer...")
         plat = "windows" if IS_WINDOWS else sys.platform
         arch = {"x86_64": "amd64", "aarch64": "arm64"}.get(get_host_architecture())
@@ -233,7 +232,7 @@ class Downloader(_DownloaderBase):
         if platform_key not in VALID_PLATFORM_KEYS:
             raise RuntimeError(f"{platform_key} platform is not supported")
 
-        url = SW_PACKER_BASE_URL % platform_key
+        url = SW_PACKER_BASE_URL.format(version=version, platform=platform_key)
         print(f"Fetching {url}...")
         r = _verify_hash(http.get(url))
 
@@ -245,7 +244,7 @@ class Downloader(_DownloaderBase):
                 os.chmod(os.path.join(self.bin_dir, "packer"), 0o755)
         print("Downloaded.")
 
-    def download_raspberry_pi_utils(self) -> None:
+    def download_rpi_utils(self, version: str) -> None:
         print("Downloading raspberrypi-utils...")
 
         os_name = {"win32": "Windows", "linux": "Linux", "darwin": "macOS"}[sys.platform]
@@ -253,7 +252,7 @@ class Downloader(_DownloaderBase):
         if arch not in ("amd64", "arm64"):
             raise RuntimeError(f"{arch} architecture is not supported")
 
-        url = SW_RPI_UTILS_BASE_URL % (os_name, arch)
+        url = SW_RPI_UTILS_BASE_URL.format(version=version, os=os_name, arch=arch)
         print(f"Fetching {url}...")
         r = _verify_hash(http.get(url))
 
@@ -264,12 +263,12 @@ class Downloader(_DownloaderBase):
                     os.chmod(os.path.join(self.bin_dir, filename), 0o755)
         print("Downloaded.")
 
-    def download_tart(self) -> None:
+    def download_tart(self, version: str) -> None:
         if sys.platform != "darwin":
             return
         print("Downloading tart...")
 
-        url = SW_TART_BASE_URL
+        url = SW_TART_BASE_URL.format(version=version)
         print(f"Fetching {url}...")
         r = _verify_hash(http.get(url))
 
@@ -281,10 +280,10 @@ class Downloader(_DownloaderBase):
         os.symlink("tart.app/Contents/MacOS/tart", os.path.join(self.bin_dir, "tart"))
         print("Downloaded.")
 
-    def download_virtio_win_drivers(self) -> None:
+    def download_virtio_win(self, version: str) -> None:
         print("Downloading virtio-win drivers...")
 
-        url = SW_VIRTIO_WIN_DRIVERS_URL
+        url = SW_VIRTIO_WIN_DRIVERS_URL.format(version=version)
         print(f"Fetching {url}...")
         r = _verify_hash(http.get(url))
 
@@ -310,11 +309,19 @@ class Downloader(_DownloaderBase):
         os.makedirs(self.bin_dir, exist_ok=True)
         os.makedirs(self.edk2_dir, exist_ok=True)
         reqs = sorted(reqs, key=list(self.REQUIREMENTS).index) if reqs else self.REQUIREMENTS
-        self.installed_reqs = set()
+
+        installed_versions_file = os.path.join(self.deps_dir, "installed_versions.json")
+        try:
+            with open(installed_versions_file, encoding="utf-8") as fp:
+                self.installed_reqs = json.load(fp)
+        except FileNotFoundError:
+            self.installed_reqs = {}
+
         for req_name in reqs:
-            if req_name not in self.installed_reqs:
-                self.REQUIREMENTS[req_name](self)
-                self.installed_reqs.add(req_name)
+            self._ensure_installed(req_name)
+
+        with open(installed_versions_file, "w", encoding="utf-8") as fp:
+            json.dump(self.installed_reqs, fp)
 
 
 @parser_spec
@@ -345,9 +352,9 @@ def main(args: argparse.Namespace, /) -> None:
                 requirements.append("aavmf")
             if image_spec["machine_type"] == "raspi3b":
                 requirements.append("7z")
-                requirements.append("raspberry_pi_utils")
+                requirements.append("rpi-utils")
             if image_spec["os"] == "windows":
-                requirements.append("virtio_win_drivers")
+                requirements.append("virtio-win")
         elif image_spec["spec_type"] == "tart":
             requirements.append("tart")
 

@@ -254,6 +254,11 @@ graph TD;
     ```console
     hatch run download-builder-requirements packer tart
     ```
+
+    You can download only the builder requirements needed by a specific job by specifying it with `--job-dir`:
+    ```console
+    hatch run download-builder-requirements --job-dir os-build-run/jobs/windows-11
+    ```
 1.  Prepare **build** directory for the **job** with the `red-install-tests prepare-build-dir` command:
     ```console
     hatch run prepare-build-dir
