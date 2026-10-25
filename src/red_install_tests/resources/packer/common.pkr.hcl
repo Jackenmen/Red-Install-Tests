@@ -3,6 +3,11 @@ variable "red_install_tests_python" {
   default = env("RED_INSTALL_TESTS_PYTHON")
 }
 
+variable "attempt" {
+  type = string
+  default = env("RED_INSTALL_TESTS_ATTEMPT")
+}
+
 variable "output_directory" {
   type = string
   default = ""
@@ -45,6 +50,7 @@ variable "os" {
 }
 
 locals {
+  attempt = convert(coalesce(var.attempt, 1), number)
   env_vars = merge(
     {
       PIP_ONLY_BINARY = ":all:"
@@ -100,11 +106,32 @@ build {
 
   // Ensure cloud-init finishes before doing anything.
   provisioner "shell" {
-    inline = ["cloud-init status --long --wait"]
-    only = var.os == "linux" ? local.sources : [""]
     // cloud-init shouldn't take long once we managed to SSH in
     // so let's just timeout after a few minutes
-    timeout = "5m"
+    inline = ["timeout 600 cloud-init status --long --wait"]
+    valid_exit_codes = [0, 124]
+    only = var.os == "linux" ? local.sources : [""]
+  }
+
+  // Collect cloud-init logs.
+  provisioner "shell" {
+    inline = ["sudo cloud-init collect-logs -t /tmp/cloud-init.tar.gz"]
+    only = var.os == "linux" ? local.sources : [""]
+  }
+
+  // Download cloud-init logs.
+  provisioner "file" {
+    direction = "download"
+    source = "/tmp/cloud-init.tar.gz"
+    destination = "${path.root}/cloud-init-${local.attempt}.tar.gz"
+    only = var.os == "linux" ? local.sources : [""]
+  }
+
+  // Ensure cloud-init actually succeeded.
+  provisioner "shell" {
+    inline = ["cloud-init status --long --wait"]
+    timeout = "30s"
+    only = var.os == "linux" ? local.sources : [""]
   }
 
   // Run provided install instructions.
