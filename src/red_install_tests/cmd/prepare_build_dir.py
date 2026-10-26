@@ -340,15 +340,15 @@ class QemuBuildDirGenerator(BuildDirGenerator):
     def _prepare_windows_specific_config(self) -> None:
         autounattend_file = _copy_resource("windows/autounattend.xml", self.build_dir)
         firstlogin_file = _copy_resource("windows/firstlogin.ps1", self.build_dir)
-        drivers_dir = os.path.join(self.build_dir, "drivers")
-        shutil.copytree(
+        windows_deps_dir = os.path.join(self.deps_dir, "windows")
+        drivers_dir = shutil.copytree(
             os.path.join(
-                self.deps_dir,
+                windows_deps_dir,
                 "drivers",
                 "Win10" if "-10" in self.image_spec["name"] else "Win11",
                 "amd64" if self.image_spec["arch"] == "x86_64" else "ARM64",
             ),
-            drivers_dir,
+            os.path.join(self.build_dir, "drivers"),
         )
         self.packer_vars["disk_image"] = False
         self.packer_vars["floppy_files"] = [

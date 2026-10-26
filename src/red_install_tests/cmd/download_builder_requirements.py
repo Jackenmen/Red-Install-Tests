@@ -89,7 +89,7 @@ class Downloader(_DownloaderBase):
         self.deps_dir = deps_dir
         self.bin_dir = os.path.join(deps_dir, "bin")
         self.edk2_dir = os.path.join(deps_dir, "edk2")
-        self.drivers_dir = os.path.join(deps_dir, "drivers")
+        self.windows_dir = os.path.join(deps_dir, "windows")
         self.installed_reqs: dict[str, str] = {}
 
     @property
@@ -287,6 +287,7 @@ class Downloader(_DownloaderBase):
         print(f"Fetching {url}...")
         r = _verify_hash(http.get(url))
 
+        drivers_dir = os.path.join(self.windows_dir, "drivers")
         with zipfile.ZipFile(BytesIO(r.content or b"")) as archive:
             for os_name in ("Win10", "Win11"):
                 for arch in ("amd64", "ARM64"):
@@ -302,7 +303,7 @@ class Downloader(_DownloaderBase):
                         "viostor.inf",
                         "viostor.sys",
                     ):
-                        archive.extract(os.path.join(os_name, arch, filename), self.drivers_dir)
+                        archive.extract(os.path.join(os_name, arch, filename), drivers_dir)
         print("Downloaded.")
 
     def run(self, reqs: Collection[str]) -> None:
