@@ -65,6 +65,11 @@ variable "cd_content" {
   default = null
 }
 
+variable "cd_files" {
+  type = list(string)
+  default = null
+}
+
 variable "architecture" {
   type = string
   default = "x86_64"
@@ -160,6 +165,7 @@ source "qemu" "tests" {
   http_content = var.http_content
   floppy_files = var.floppy_files
   cd_content = local.machine_type == "raspi3b" ? null : var.cd_content
+  cd_files = var.cd_files
   cd_label = "cidata"
   ssh_username = local.username
 

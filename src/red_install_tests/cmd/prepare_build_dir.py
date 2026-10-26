@@ -350,12 +350,28 @@ class QemuBuildDirGenerator(BuildDirGenerator):
             ),
             os.path.join(self.build_dir, "drivers"),
         )
+        gsudo_dir = shutil.copytree(
+            os.path.join(
+                windows_deps_dir,
+                "gsudo",
+                "x64" if self.image_spec["arch"] == "x86_64" else "arm64",
+            ),
+            os.path.join(self.build_dir, "gsudo"),
+        )
+        openssh_msi_file = shutil.copy(
+            os.path.join(windows_deps_dir, f"openssh-{self.image_spec['arch']}.msi"),
+            os.path.join(self.build_dir, "openssh.msi"),
+        )
         self.packer_vars["disk_image"] = False
         self.packer_vars["floppy_files"] = [
             autounattend_file,
             firstlogin_file,
             drivers_dir,
             f"{self.key_path}.pub",
+        ]
+        self.packer_vars["cd_files"] = [
+            gsudo_dir,
+            openssh_msi_file,
         ]
 
 

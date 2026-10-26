@@ -38,6 +38,9 @@ SW_7ZIP_BASE_URL: Final = "https://github.com/ip7z/7zip/releases/download/{versi
 SW_AAVMF_BASE_URL: Final = (
     "http://ftp.nl.debian.org/debian/pool/main/e/edk2/qemu-efi-aarch64_{version}_all.deb"
 )
+SW_GSUDO_URL: Final = (
+    "https://github.com/gerardog/gsudo/releases/download/v{version}/gsudo.portable.zip"
+)
 SW_OVMF_BASE_URL: Final = "http://ftp.nl.debian.org/debian/pool/main/e/edk2/ovmf_{version}_all.deb"
 SW_PACKER_BASE_URL: Final = (
     "https://releases.hashicorp.com/packer/{version}/packer_{version}_{platform}.zip"
@@ -52,6 +55,10 @@ SW_TART_BASE_URL: Final = (
 SW_VIRTIO_WIN_DRIVERS_URL: Final = (
     "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/virtio-win-pkg-scripts-input"
     "/virtio-win-{version}/virtio-win-prewhql-0.1.zip"
+)
+SW_WIN32_OPENSSH_URL: Final = (
+    "https://github.com/PowerShell/Win32-OpenSSH/releases/download/{release_tag}"
+    "/OpenSSH-{platform}-v{version}.msi"
 )
 
 
@@ -306,6 +313,47 @@ class Downloader(_DownloaderBase):
                         archive.extract(os.path.join(os_name, arch, filename), drivers_dir)
         print("Downloaded.")
 
+    def download_gsudo(self, version: str) -> None:
+        print("Downloading gsudo...")
+
+        url = SW_GSUDO_URL.format(version=version)
+        print(f"Fetching {url}...")
+        r = _verify_hash(http.get(url))
+
+        gsudo_dir = os.path.join(self.windows_dir, "gsudo")
+        with zipfile.ZipFile(BytesIO(r.content or b"")) as archive:
+            for file in archive.namelist():
+                if file.startswith(("x64/", "arm64/")):
+                    archive.extract(file, gsudo_dir)
+
+        print("Downloaded.")
+
+    def download_win32_openssh_x64(self, version: str) -> None:
+        print("Downloading Win32-OpenSSH for x86-64...")
+
+        base_version, _, _ = version.partition("p")
+        url = SW_WIN32_OPENSSH_URL.format(
+            release_tag=version, version=base_version, platform="Win64"
+        )
+        print(f"Fetching {url}...")
+        r = _verify_hash(http.get(url))
+        with open(os.path.join(self.windows_dir, "openssh-x86_64.msi"), "wb") as fp:
+            fp.writelines(r.iter_content())
+        print("Downloaded.")
+
+    def download_win32_openssh_arm64(self, version: str) -> None:
+        print("Downloading Win32-OpenSSH for ARM64...")
+
+        base_version, _, _ = version.partition("p")
+        url = SW_WIN32_OPENSSH_URL.format(
+            release_tag=version, version=base_version, platform="ARM64"
+        )
+        print(f"Fetching {url}...")
+        r = _verify_hash(http.get(url))
+        with open(os.path.join(self.windows_dir, "openssh-aarch64.msi"), "wb") as fp:
+            fp.writelines(r.iter_content())
+        print("Downloaded.")
+
     def run(self, reqs: Collection[str]) -> None:
         os.makedirs(self.bin_dir, exist_ok=True)
         os.makedirs(self.edk2_dir, exist_ok=True)
@@ -355,7 +403,12 @@ def main(args: argparse.Namespace, /) -> None:
                 requirements.append("7z")
                 requirements.append("rpi-utils")
             if image_spec["os"] == "windows":
+                requirements.append("gsudo")
                 requirements.append("virtio-win")
+                if image_spec["arch"] == "x86_64":
+                    requirements.append("win32-openssh-x64")
+                if image_spec["arch"] == "aarch64":
+                    requirements.append("win32-openssh-arm64")
         elif image_spec["spec_type"] == "tart":
             requirements.append("tart")
 
