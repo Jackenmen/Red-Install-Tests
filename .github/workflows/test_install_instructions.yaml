@@ -498,13 +498,18 @@ jobs:
           while read -r image_name artifact_links; do
             job_artifact_links[$image_name]="$artifact_links"
           done < <(
-            echo "$artifacts_resp" | jq -r \
+            echo "$artifacts_resp" | jq --arg repo_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" -r \
               '.artifacts
                 | map(select(.name | test("-packer-\\d.log|-screen-\\d.mkv")))
                 | group_by(.name[:-13])
                 | map({
                     key: .[0].name[:-13],
-                    value: [. | sort_by(.name) | .[] | "[\(.name)](\(.archive_download_url))"]
+                    value: [
+                      .
+                      | sort_by(.name)
+                      | .[]
+                      | "[\(.name)](\($repo_url)/actions/runs/\(.workflow_run.id)/artifacts/\(.id))"
+                    ]
                   })
                 | sort_by(-(.value | length), .key)[]
                 | "\(.key) \(.value | join(" "))"
