@@ -321,7 +321,7 @@ class Downloader(_DownloaderBase):
             self._ensure_installed(req_name)
 
         with open(installed_versions_file, "w", encoding="utf-8") as fp:
-            json.dump(self.installed_reqs, fp)
+            json.dump(self.installed_reqs, fp, indent=4)
 
 
 @parser_spec
