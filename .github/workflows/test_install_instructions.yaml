@@ -443,6 +443,13 @@ jobs:
       contents: read
 
     steps:
+      - name: Download log artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: '*-packer-*.log'
+          merge-multiple: true
+
       - name: Generate run summary
         env:
           GH_REPO: ${{ github.repository }}
@@ -539,10 +546,8 @@ jobs:
               conclusion="${job_conclusions[$image_name]}"
               if [[ "$conclusion" == 'failure' ]]; then
                 echo "## $image_name" >> "$GITHUB_STEP_SUMMARY"
-                artifacts=$(mktemp -d)
-                gh run download --dir "$artifacts" --pattern "$image_name-packer-*.log"
                 attempt=0
-                for file in "$artifacts"/*.log; do
+                for file in artifacts/"$image_name"-packer-*.log; do
                   attempt=$((attempt + 1))
                   echo "### Attempt $attempt" >> "$GITHUB_STEP_SUMMARY"
                   echo "```" >> "$GITHUB_STEP_SUMMARY"
