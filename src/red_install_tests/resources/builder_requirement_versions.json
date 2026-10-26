@@ -1,9 +1,12 @@
 {
     "7z": "26.03",
     "aavmf": "2022.11-6+deb12u2",
+    "gsudo": "2.6.1",
     "ovmf": "2022.11-6+deb12u2",
     "packer": "1.15.3",
     "rpi-utils": "2026.6.3",
     "tart": "2.32.1",
-    "virtio-win": "0.1.302-1"
+    "virtio-win": "0.1.302-1",
+    "win32-openssh-x64": "10.4.0.0p1-Preview",
+    "win32-openssh-arm64": "10.4.0.0p1-Preview"
 }
