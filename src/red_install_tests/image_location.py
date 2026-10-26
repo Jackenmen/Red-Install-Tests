@@ -140,6 +140,7 @@ class DiskImageSpec(_BaseImageSpec, closed=True):
     spec_type: Literal["disk"]
     url: ReadOnly[str]
     checksum: ReadOnly[str]
+    content_length_hint: ReadOnly[int | None]
     image_format: ReadOnly[ImageFormatType]
     machine_type: ReadOnly[MachineType]
     boot_mode: ReadOnly[BootModeType]
@@ -186,7 +187,7 @@ def _create_base_image_spec(
 
 
 def _create_disk_image_spec(
-    location: _DiskImageLocation, *, url: str, checksum: str
+    location: _DiskImageLocation, *, url: str, checksum: str, content_length_hint: int | None
 ) -> DiskImageSpec:
     machine_type = location.get("machine_type")
     return {
@@ -197,6 +198,7 @@ def _create_disk_image_spec(
         "boot_mode": location.get("boot_mode") or _get_default_boot_mode(machine_type),
         "url": url,
         "checksum": checksum,
+        "content_length_hint": content_length_hint,
     }
 
 
@@ -323,6 +325,12 @@ def _normalize_checksum(checksum_type: ChecksumType, checksum: str) -> str:
     return checksum
 
 
+def _get_validated_download_url(url: str) -> tuple[str, int | None]:
+    resp = http.head(url, allow_redirects=True)
+    header_value = resp.headers.get("content-length")
+    return resp.url or url, int(header_value) if header_value else None
+
+
 def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation) -> DiskImageSpec:
     url = location["url"]
     checksum_type = location.get("checksum_type", "sha256")
@@ -331,12 +339,24 @@ def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation)
         checksum_style=location.get("checksum_style", "gnu"),
         filename_pattern=location["filename_pattern"],
     )
+    download_url, content_length_hint = _get_validated_download_url(file_url)
 
-    return _create_disk_image_spec(location, url=file_url, checksum=f"{checksum_type}:{checksum}")
+    return _create_disk_image_spec(
+        location,
+        url=download_url,
+        checksum=f"{checksum_type}:{checksum}",
+        content_length_hint=content_length_hint,
+    )
 
 
 def _generate_image_spec_from_direct_url(location: DirectUrlImageLocation) -> DiskImageSpec:
-    return _create_disk_image_spec(location, url=location["url"], checksum=location["checksum"])
+    download_url, content_length_hint = _get_validated_download_url(location["url"])
+    return _create_disk_image_spec(
+        location,
+        url=download_url,
+        checksum=location["checksum"],
+        content_length_hint=content_length_hint,
+    )
 
 
 def _generate_image_spec_from_json_file(location: JsonFileImageLocation) -> DiskImageSpec:
@@ -362,6 +382,7 @@ def _generate_image_spec_from_json_file(location: JsonFileImageLocation) -> Disk
             f" did not return a string when evaluated on the JSON file at URL: {url}"
         )
     download_url = urljoin(r.url or url, download_url)
+    download_url, content_length_hint = _get_validated_download_url(download_url)
 
     checksum = ""
     checksum_json_query = jsonquerylang.compile(
@@ -381,7 +402,10 @@ def _generate_image_spec_from_json_file(location: JsonFileImageLocation) -> Disk
     checksum = _normalize_checksum(checksum_type, checksum)
 
     return _create_disk_image_spec(
-        location, url=download_url, checksum=f"{checksum_type}:{checksum}"
+        location,
+        url=download_url,
+        checksum=f"{checksum_type}:{checksum}",
+        content_length_hint=content_length_hint,
     )
 
 
@@ -401,6 +425,7 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
             f" in the HTML file at URL: {url}"
         )
     download_url = urljoin(r.url or url, download_url)
+    download_url, content_length_hint = _get_validated_download_url(download_url)
 
     checksum = ""
     if xpath := location.get("checksum_xpath"):
@@ -435,7 +460,10 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
         raise RuntimeError("both checksum_xpath and checksum_file_url_xpath are missing")
 
     return _create_disk_image_spec(
-        location, url=download_url, checksum=f"{checksum_type}:{checksum}"
+        location,
+        url=download_url,
+        checksum=f"{checksum_type}:{checksum}",
+        content_length_hint=content_length_hint,
     )
 
 

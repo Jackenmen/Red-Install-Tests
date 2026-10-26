@@ -8,7 +8,6 @@ import time
 import pyhaul
 import rich.progress
 from platformdirs import user_cache_dir
-from pyhaul.transport.types import TransportRequestOptions
 
 from red_install_tests import http
 from red_install_tests.cli import add_job_dir_option, parser_spec, run
@@ -61,20 +60,12 @@ def _cache_image(image_spec: DiskImageSpec, cache_dir: str) -> None:
     ):
         progress_task = progress.add_task("Downloading the image...")
         state = pyhaul.HaulState()
-        content_length = 1
+        content_length = image_spec["content_length_hint"] or 1
 
         def show_progress(state: pyhaul.HaulState) -> None:
             nonlocal content_length
-            if content_length == 1:
-                if state.reported_length:
-                    content_length = state.reported_length
-                else:
-                    # download progress requires content length but it is not always present
-                    content_length = pyhaul.probe(
-                        image_spec["url"],
-                        http.session,
-                        options=TransportRequestOptions(allow_redirects=True),
-                    ).total_length
+            if state.reported_length:
+                content_length = state.reported_length
 
             progress.update(progress_task, completed=state.valid_length, total=content_length)
 
