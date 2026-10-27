@@ -1,4 +1,5 @@
 import base64
+import functools
 import re
 from collections.abc import Callable, Hashable
 from typing import Any, Final, Literal, NotRequired, ReadOnly, assert_never
@@ -13,6 +14,7 @@ from . import http
 
 DEFAULT_JAVA_VERSION: Final = 25
 DEFAULT_IMAGE_FORMAT: Final = "qcow2"
+_ATTEMPT_COUNT: Final = 3
 
 _etree_ns: Final = etree.FunctionNamespace(None)
 
@@ -332,6 +334,25 @@ def _get_validated_download_url(url: str) -> tuple[str, int | None]:
     return resp.url or url, int(header_value) if header_value else None
 
 
+def _autoretry[T: ImageLocation, U: ImageSpec](func: Callable[[T], U]) -> Callable[[T], U]:
+    @functools.wraps(func)
+    def wrapper(location: T) -> U:
+        # try a few times in case of failure to hopefully get a better mirror
+        for attempt in range(1, _ATTEMPT_COUNT + 1):
+            try:
+                return func(location)
+            except niquests.HTTPError as e:
+                exc = e
+                print(f"{location['name']}: Attempt {attempt} failed with error: {exc!r}")
+
+        raise RuntimeError(
+            f"Exceeded max attempts while trying to generate image spec for {location['name']}"
+        ) from exc
+
+    return wrapper
+
+
+@_autoretry
 def _generate_image_spec_from_checksum_file(location: ChecksumFileImageLocation) -> DiskImageSpec:
     url = location["url"]
     checksum_type = location.get("checksum_type", "sha256")
@@ -360,6 +381,7 @@ def _generate_image_spec_from_direct_url(location: DirectUrlImageLocation) -> Di
     )
 
 
+@_autoretry
 def _generate_image_spec_from_json_file(location: JsonFileImageLocation) -> DiskImageSpec:
     url_json_query = jsonquerylang.compile(jsonquerylang.parse(location["url_json_query"]))
     url = location["url"]
@@ -410,6 +432,7 @@ def _generate_image_spec_from_json_file(location: JsonFileImageLocation) -> Disk
     )
 
 
+@_autoretry
 def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec:
     url_xpath = etree.XPath(location["url_xpath"])
     url = location["url"]
