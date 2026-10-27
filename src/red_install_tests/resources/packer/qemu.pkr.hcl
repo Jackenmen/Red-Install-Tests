@@ -127,6 +127,11 @@ locals {
       ["-device", "usb-kbd"],
       ["-device", "usb-tablet"],
     ],
+    local.is_x86_64 || local.machine_type == "raspi3b" ? [] : [
+      for i in range(
+        (var.disk_image ? 0 : 1) + (var.cd_content != null || var.cd_files != null ? 1 : 0)
+      ) : ["-device", "usb-storage,drive=cdrom${i}"]
+    ],
     var.extra_qemu_args,
   )
   username = "packer"
@@ -165,8 +170,9 @@ source "qemu" "tests" {
   http_content = var.http_content
   floppy_files = var.floppy_files
   cd_content = local.machine_type == "raspi3b" ? null : var.cd_content
-  cd_files = var.cd_files
+  cd_files = local.machine_type == "raspi3b" ? null : var.cd_files
   cd_label = "cidata"
+  cdrom_interface = local.is_x86_64 || local.machine_type == "raspi3b" ? "" : "none"
   ssh_username = local.username
 
   # Keystrokes to send over VNC, only needed on Windows in UEFI mode

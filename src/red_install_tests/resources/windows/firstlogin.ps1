@@ -23,7 +23,7 @@ msiexec /i "$cidata_dir\openssh.msi"
 [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path",[System.EnvironmentVariableTarget]::Machine) + ';' + ${Env:ProgramFiles} + '\OpenSSH', [System.EnvironmentVariableTarget]::Machine)
 
 # Configure SSH key
-$authorizedKey = Get-Content -Path A:\ssh.key.pub
+$authorizedKey = Get-Content -Path $cidata_dir\ssh.key.pub
 Add-Content -Force -Path $env:ProgramData\ssh\administrators_authorized_keys -Value $authorizedKey
 icacls.exe ""$env:ProgramData\ssh\administrators_authorized_keys"" /inheritance:r /grant ""Administrators:F"" /grant ""SYSTEM:F""
 

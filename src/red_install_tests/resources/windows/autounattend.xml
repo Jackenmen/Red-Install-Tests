@@ -86,7 +86,7 @@
     <component language="neutral" name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS">
       <DriverPaths>
         <PathAndCredentials wcm:action="add" wcm:keyValue="1">
-          <Path>a:\</Path>
+          <Path>e:\drivers</Path>
         </PathAndCredentials>
       </DriverPaths>
     </component>
@@ -175,7 +175,7 @@
       <!-- Configure script to run to prepare image for use with Packer -->
       <FirstLogonCommands>
         <SynchronousCommand wcm:action="add">
-          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -File a:\firstlogin.ps1</CommandLine>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$sb = [scriptblock]::Create((Get-Volume -FileSystemLabel cidata).DriveLetter + ':\firstlogin.ps1'); Invoke-Command -ScriptBlock $sb"</CommandLine>
           <Order>1</Order>
         </SynchronousCommand>
       </FirstLogonCommands>

@@ -366,16 +366,14 @@ class QemuBuildDirGenerator(BuildDirGenerator):
             os.path.join(windows_deps_dir, "RefreshEnv.cmd"), self.build_dir
         )
         self.packer_vars["disk_image"] = False
-        self.packer_vars["floppy_files"] = [
+        self.packer_vars["cd_files"] = [
             autounattend_file,
             firstlogin_file,
             drivers_dir,
-            f"{self.key_path}.pub",
-        ]
-        self.packer_vars["cd_files"] = [
             gsudo_dir,
             openssh_msi_file,
             refreshenv_cmd_file,
+            f"{self.key_path}.pub",
         ]
 
 
