@@ -58,9 +58,9 @@ def _cache_image(image_spec: DiskImageSpec, cache_dir: str) -> None:
             rich.progress.TimeRemainingColumn(),
         ) as progress,
     ):
-        progress_task = progress.add_task("Downloading the image...")
+        content_length = image_spec["content_length_hint"] or 100
+        progress_task = progress.add_task("Downloading the image...", total=content_length)
         state = pyhaul.HaulState()
-        content_length = image_spec["content_length_hint"] or 1
 
         def show_progress(state: pyhaul.HaulState) -> None:
             nonlocal content_length
