@@ -19,7 +19,7 @@ Copy-Item $cidata_dir\gsudo C:\gsudo -Recurse
 
 # Install SSH server
 # https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH-Using-MSI
-msiexec /i "$cidata_dir\openssh.msi"
+Start-Process msiexec.exe -Wait -ArgumentList '/i',"$cidata_dir\openssh.msi"
 [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path",[System.EnvironmentVariableTarget]::Machine) + ';' + ${Env:ProgramFiles} + '\OpenSSH', [System.EnvironmentVariableTarget]::Machine)
 
 # Configure SSH key
