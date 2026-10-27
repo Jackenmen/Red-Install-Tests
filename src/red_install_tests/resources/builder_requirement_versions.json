@@ -4,6 +4,7 @@
     "gsudo": "2.6.1",
     "ovmf": "2022.11-6+deb12u2",
     "packer": "1.15.3",
+    "refreshenv-cmd": "c8659d49508d2a1dcb61ef3548f90552ff86c5c8",
     "rpi-utils": "2026.6.3",
     "tart": "2.32.1",
     "virtio-win": "0.1.302-1",

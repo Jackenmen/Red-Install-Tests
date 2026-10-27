@@ -45,6 +45,10 @@ SW_OVMF_BASE_URL: Final = "http://ftp.nl.debian.org/debian/pool/main/e/edk2/ovmf
 SW_PACKER_BASE_URL: Final = (
     "https://releases.hashicorp.com/packer/{version}/packer_{version}_{platform}.zip"
 )
+SW_REFRESHENV_CMD_URL: Final = (
+    "https://raw.githubusercontent.com/chocolatey/choco/{commit}"
+    "/src/chocolatey.resources/redirects/RefreshEnv.cmd"
+)
 SW_RPI_UTILS_BASE_URL: Final = (
     "https://github.com/Jackenmen/raspberrypi-utils/releases/download/v{version}"
     "/raspberrypi-utils-{os}-{arch}-Release.zip"
@@ -60,6 +64,22 @@ SW_WIN32_OPENSSH_URL: Final = (
     "https://github.com/PowerShell/Win32-OpenSSH/releases/download/{release_tag}"
     "/OpenSSH-{platform}-v{version}.msi"
 )
+REFRESHENV_CMD_LINE_MAPPINGS = {
+    (
+        """    'wmic Process"""
+        ''' WHERE "Name='!CmdExeName!' AND CommandLine LIKE '%%!uid!%%'"'''
+        """ GET ParentProcessID /value'\r\n"""
+    ): (
+        """    'powershell -command "Get-CimInstance -ClassName Win32_Process"""
+        ''' -Filter \\"Name='!CmdExeName!' AND CommandLine LIKE '%%!uid!%%'\\"'''
+        """ | Select-Object -ExpandProperty ParentProcessId"'\r\n"""
+    ),
+    """        'wmic Process WHERE "Handle='%%i'" GET CommandLine /value'\r\n""": (
+        """        'powershell -command "Get-CimInstance -Class Win32_Process"""
+        ''' -Filter \\"Handle='%%i'\\"'''
+        """ | Select-Object -ExpandProperty CommandLine"'\r\n"""
+    ),
+}
 
 
 def _verify_hash(r: niquests.Response) -> niquests.Response:
@@ -328,6 +348,22 @@ class Downloader(_DownloaderBase):
 
         print("Downloaded.")
 
+    def download_refreshenv_cmd(self, version: str) -> None:
+        print("Downloading RefreshEnv.cmd...")
+
+        url = SW_REFRESHENV_CMD_URL.format(commit=version)
+        print(f"Fetching {url}...")
+        r = _verify_hash(http.get(url))
+        with open(
+            os.path.join(self.windows_dir, "RefreshEnv.cmd"), "w", encoding="utf-8-sig", newline=""
+        ) as fp:
+            fp.writelines(
+                REFRESHENV_CMD_LINE_MAPPINGS.get(line, line)
+                for line in (r.text or "").splitlines(keepends=True)
+            )
+
+        print("Downloaded.")
+
     def download_win32_openssh_x64(self, version: str) -> None:
         print("Downloading Win32-OpenSSH for x86-64...")
 
@@ -404,6 +440,7 @@ def main(args: argparse.Namespace, /) -> None:
                 requirements.append("rpi-utils")
             if image_spec["os"] == "windows":
                 requirements.append("gsudo")
+                requirements.append("refreshenv-cmd")
                 requirements.append("virtio-win")
                 if image_spec["arch"] == "x86_64":
                     requirements.append("win32-openssh-x64")

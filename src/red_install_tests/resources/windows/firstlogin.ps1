@@ -11,6 +11,9 @@ reg add 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsStore\WindowsUpda
 
 $cidata_dir = (Get-Volume -FileSystemLabel cidata).DriveLetter + ":"
 
+# Copy RefreshEnv.cmd script
+Copy-Item $cidata_dir\RefreshEnv.cmd C:\RefreshEnv.cmd
+
 # Copy gsudo over to allow to strip elevation over SSH
 Copy-Item $cidata_dir\gsudo C:\gsudo -Recurse
 

@@ -65,7 +65,7 @@ locals {
   gsudo_drop_elevation_command = "C:\\gsudo\\gsudo.exe -i Medium "
   windows_python_execute_command = replace(
     <<-EOT
-    call C:\\ProgramData\\chocolatey\\bin\\RefreshEnv.cmd
+    call C:\\RefreshEnv.cmd
     && call %USERPROFILE%\\redenv\\Scripts\\activate.bat
     && {{ .Vars }}${local.gsudo_drop_elevation_command}python {{ .Path }}
     EOT

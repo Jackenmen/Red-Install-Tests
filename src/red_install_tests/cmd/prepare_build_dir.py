@@ -362,6 +362,9 @@ class QemuBuildDirGenerator(BuildDirGenerator):
             os.path.join(windows_deps_dir, f"openssh-{self.image_spec['arch']}.msi"),
             os.path.join(self.build_dir, "openssh.msi"),
         )
+        refreshenv_cmd_file = shutil.copy(
+            os.path.join(windows_deps_dir, "RefreshEnv.cmd"), self.build_dir
+        )
         self.packer_vars["disk_image"] = False
         self.packer_vars["floppy_files"] = [
             autounattend_file,
@@ -372,6 +375,7 @@ class QemuBuildDirGenerator(BuildDirGenerator):
         self.packer_vars["cd_files"] = [
             gsudo_dir,
             openssh_msi_file,
+            refreshenv_cmd_file,
         ]
 
 
