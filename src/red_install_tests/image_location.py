@@ -83,6 +83,7 @@ class DirectUrlImageLocation(_DiskImageLocation, closed=True):
 class _BaseHtmlImageLocation(_DiskImageLocation):
     download_type: Literal["html"]
     url_xpath: str
+    checksum_url: NotRequired[str]
     checksum_type: NotRequired[ChecksumType]
 
 
@@ -412,6 +413,7 @@ def _generate_image_spec_from_json_file(location: JsonFileImageLocation) -> Disk
 def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec:
     url_xpath = etree.XPath(location["url_xpath"])
     url = location["url"]
+    checksum_url = location.get("checksum_url")
     checksum_type = location.get("checksum_type", "sha256")
 
     r = http.get(url)
@@ -424,28 +426,40 @@ def _generate_image_spec_from_html(location: HtmlImageLocation) -> DiskImageSpec
             f"did not find any elements matching provided URL XPath ({url_xpath!r})"
             f" in the HTML file at URL: {url}"
         )
-    download_url = urljoin(r.url or url, download_url)
+    resp_url = r.url or url
+    download_url = urljoin(resp_url, download_url)
     download_url, content_length_hint = _get_validated_download_url(download_url)
+
+    checksum_root = root
+    checksum_resp_url = resp_url
+    if checksum_url:
+        r = http.get(checksum_url)
+        if not r.text:
+            raise RuntimeError(f"could not decode response from URL: {checksum_url}")
+        checksum_root = etree.HTML(r.text)
+        checksum_resp_url = r.url or checksum_url
+    else:
+        checksum_url = url
 
     checksum = ""
     if xpath := location.get("checksum_xpath"):
         checksum_xpath = etree.XPath(xpath)
-        checksums = checksum_xpath(root)
+        checksums = checksum_xpath(checksum_root)
         if not checksums:
             raise RuntimeError(
                 f"did not find any elements matching provided checksum XPath ({xpath!r})"
-                f" in the HTML file at URL: {url}"
+                f" in the HTML file at URL: {checksum_url}"
             )
         checksum = _normalize_checksum(checksum_type, checksums[0])
     if xpath := location.get("checksum_file_url_xpath"):
         checksum_file_url_xpath = etree.XPath(xpath)
-        checksum_file_url = _xpath_string(checksum_file_url_xpath(root))
+        checksum_file_url = _xpath_string(checksum_file_url_xpath(checksum_root))
         if not checksum_file_url:
             raise RuntimeError(
                 f"did not find any elements matching provided checksum file URL XPath ({xpath!r})"
-                f" in the HTML file at URL: {url}"
+                f" in the HTML file at URL: {checksum_url}"
             )
-        checksum_file_url = urljoin(r.url or url, _xpath_string(checksum_file_url))
+        checksum_file_url = urljoin(checksum_resp_url, _xpath_string(checksum_file_url))
 
         parsed_download_url = urlsplit(download_url)
         _, _, download_filename = parsed_download_url.path.rpartition("/")
