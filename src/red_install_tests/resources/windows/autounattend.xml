@@ -3,7 +3,7 @@
   <servicing/>
   <!-- Consult configuration passes diagram: https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/how-configuration-passes-work?view=windows-11 -->
   <settings pass="windowsPE">
-    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <component name="Microsoft-Windows-Setup" processorArchitecture="%(arch)s" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <!-- Disable TPM checks -->
       <RunSynchronous>
         <RunSynchronousCommand wcm:action="add">
@@ -83,7 +83,7 @@
       </ImageInstall>
     </component>
     <!-- Configure drivers -->
-    <component language="neutral" name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS">
+    <component language="neutral" name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="%(arch)s" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS">
       <DriverPaths>
         <PathAndCredentials wcm:action="add" wcm:keyValue="1">
           <Path>e:\drivers</Path>
@@ -91,7 +91,7 @@
       </DriverPaths>
     </component>
     <!-- Configure system language -->
-    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="%(arch)s" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <SetupUILanguage>
         <UILanguage>en-US</UILanguage>
       </SetupUILanguage>
@@ -103,13 +103,13 @@
   </settings>
   <!-- disable UAC -->
   <settings pass="offlineServicing">
-    <component name="Microsoft-Windows-LUA-Settings" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <component name="Microsoft-Windows-LUA-Settings" processorArchitecture="%(arch)s" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <EnableLUA>false</EnableLUA>
     </component>
   </settings>
   <settings pass="specialize">
     <!-- Run commands *before* logged into the user account (and before it's created) -->
-    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="%(arch)s" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <RunSynchronous>
         <RunSynchronousCommand wcm:action="add">
           <Order>1</Order>
@@ -130,16 +130,16 @@
       </RunSynchronous>
     </component>
     <!-- Set system timezone -->
-    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="%(arch)s" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <TimeZone>UTC</TimeZone>
     </component>
     <!-- Skip automatic online activation -->
-    <component name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <component name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="%(arch)s" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <SkipAutoActivation>true</SkipAutoActivation>
     </component>
   </settings>
   <settings pass="oobeSystem">
-    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="%(arch)s" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <!-- Configure user account -->
       <UserAccounts>
         <LocalAccounts>

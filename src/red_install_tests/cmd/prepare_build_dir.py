@@ -339,6 +339,13 @@ class QemuBuildDirGenerator(BuildDirGenerator):
 
     def _prepare_windows_specific_config(self) -> None:
         autounattend_file = _copy_resource("windows/autounattend.xml", self.build_dir)
+        with open(autounattend_file, "r+b") as fp:
+            new_content = fp.read() % {
+                b"arch": b"amd64" if self.image_spec["arch"] == "x86_64" else b"arm64",
+            }
+            fp.seek(0)
+            fp.write(new_content)
+            fp.truncate()
         firstlogin_file = _copy_resource("windows/firstlogin.ps1", self.build_dir)
         windows_deps_dir = os.path.join(self.deps_dir, "windows")
         drivers_dir = shutil.copytree(
