@@ -127,7 +127,8 @@ def main() -> None:
     with subprocess.Popen((qemu_binary, *args)) as proc:
         thread.start()
         try:
-            raise SystemExit(proc.wait())
+            exit_code = proc.wait()
+            print("QEMU process exited with code:", exit_code)
         except KeyboardInterrupt:
             pass
         finally:
