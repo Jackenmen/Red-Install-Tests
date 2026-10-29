@@ -5,15 +5,78 @@ import sys
 import threading
 import time
 from fractions import Fraction
-from typing import IO, NamedTuple
+from typing import IO, Final, NamedTuple
 
 import av
+from PIL import Image
 from vncdotool import api
 
 
 class Video(NamedTuple):
     container: av.container.OutputContainer
     stream: av.VideoStream
+
+
+class Recorder:
+    WIDTH: Final = 800
+    HEIGHT: Final = 600
+
+    def __init__(
+        self, screenshot_path: str | None, *, video: Video | None = None, fps: int = 8
+    ) -> None:
+        self.video = video
+        self.screenshot_path = screenshot_path
+        self.fps = fps
+        self.time_base = Fraction(1, fps)
+        self._start_time = time.monotonic()
+        self._last_frame_time = time.monotonic()
+        self.frame_number = 0
+
+    def start(self) -> None:
+        self._start_time = time.monotonic()
+        self._last_frame_time = self._start_time
+
+    def stop(self) -> None:
+        video = self.video
+        if video is not None:
+            for packet in video.stream.encode():
+                video.container.mux_one(packet)
+            video.container.close()
+
+    def write_screen(self, screen: Image.Image) -> None:
+        if (
+            self.frame_number % self.fps == 0
+            and (screenshot_path := self.screenshot_path) is not None
+        ):
+            with open(f"{screenshot_path}.tmp", "wb") as fp:
+                screen.save(fp, format="png")
+            os.rename(f"{screenshot_path}.tmp", screenshot_path)
+
+        video = self.video
+        if video is None:
+            return
+
+        stop = time.monotonic()
+        total_frames = int((stop - self._start_time) / self.time_base)
+        new_frames = total_frames - self.frame_number
+
+        if new_frames == 0:
+            return
+
+        frame = av.VideoFrame.from_image(screen)
+        for packet in video.stream.encode(frame):
+            video.container.mux_one(packet)
+        self.frame_number += 1
+
+        if new_frames == 1:
+            return
+
+        screen.paste(0x0000FF, (screen.width - 100, 50, screen.width - 50, 100))
+        frame = av.VideoFrame.from_image(screen)
+        for _ in range(new_frames - 1):
+            for packet in video.stream.encode(frame):
+                video.container.mux_one(packet)
+            self.frame_number += 1
 
 
 class VNCScreenshotThread(threading.Thread):
@@ -33,59 +96,52 @@ class VNCScreenshotThread(threading.Thread):
         self.vnc_password = vnc_password or None
 
     def run(self) -> None:
-        screenshot_path = self.screenshot_path
-        video: Video | None = None
+        recorder = Recorder(self.screenshot_path)
         video_fp: IO[bytes] | None
-        fps = 8
         try:
             if self.screencast_path is not None:
                 video_fp = open(self.screencast_path, "wb", buffering=0)  # noqa: SIM115
                 container = av.open(video_fp, "w", buffer_size=184)
                 container.flags |= av.container.Flags.flush_packets.value
                 stream = container.add_stream(
-                    "vp9", rate=fps, width=800, height=600, time_base=Fraction(1, fps)
+                    "vp9",
+                    rate=recorder.fps,
+                    width=recorder.WIDTH,
+                    height=recorder.HEIGHT,
+                    time_base=recorder.time_base,
                 )
-                video = Video(container, stream)
+                recorder.video = Video(container, stream)
 
             # ensure VNC server is up by waiting a bit
             time.sleep(1)
 
-            max_wait = 1.0 / fps
             client = api.connect(self.vnc_address, self.vnc_password)
-            client.timeout = max_wait
+            client.timeout = 1.0
 
+            max_wait = 1.0 / recorder.fps
             wait = max_wait
+            recorder.start()
             while not self._stop.wait(wait):
                 wait = 0.0
 
                 start = time.monotonic()
                 try:
                     client.refreshScreen()
-                    if screenshot_path is not None:
-                        with open(f"{screenshot_path}.tmp", "wb") as fp:
-                            client.screen.save(fp, format="png")
-                    if video is not None:
-                        frame = av.VideoFrame.from_image(client.screen)
-                        for packet in video.stream.encode(frame):
-                            video.container.mux_one(packet)
                 except TimeoutError:
                     client.disconnect()
                     client = api.connect(self.vnc_address, self.vnc_password)
-                    client.timeout = max_wait
+                    client.timeout = 1.0
                     wait = max_wait / 2
                     continue
-                if screenshot_path is not None:
-                    os.rename(f"{screenshot_path}.tmp", screenshot_path)
+                else:
+                    recorder.write_screen(client.screen.copy())
                 stop = time.monotonic()
 
                 elapsed = stop - start
                 if elapsed < max_wait:
                     wait = max_wait - elapsed
         finally:
-            if video is not None:
-                for packet in video.stream.encode():
-                    video.container.mux_one(packet)
-                video.container.close()
+            recorder.stop()
             if video_fp is not None:
                 video_fp.close()
             client.disconnect()
