@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     qemu = {
-      version = ">= 1.4.4"
+      version = ">= 1.4.5"
       source = "github.com/cog-creators/qemu"
     }
   }
@@ -98,6 +98,7 @@ locals {
   is_x86_64 = var.architecture == "x86_64"
   machine_type = coalesce(var.machine_type, local.is_x86_64 ? "q35" : "virt")
   net_device = local.machine_type == "raspi3b" ? "usb-net" : "virtio-net"
+  disk_interface = local.machine_type == "raspi3b" ? "sd" : "virtio-scsi"
   qemu_args = concat(
     local.machine_type == "raspi3b" ? [] : [
       ["-device", "qemu-xhci"],
@@ -126,6 +127,10 @@ locals {
       ["-device", "${local.net_device},netdev=user.0"],
       ["-device", "usb-kbd"],
       ["-device", "usb-tablet"],
+    ],
+    local.disk_interface != "virtio-scsi" ? [] : [
+      ["-device", "virtio-scsi-pci,id=scsi0"],
+      ["-device", "scsi-hd,bus=scsi0.0,drive=drive0"],
     ],
     local.is_x86_64 || local.machine_type == "raspi3b" ? [] : [
       for i in range(
@@ -194,7 +199,7 @@ source "qemu" "tests" {
   # https://www.qemu.org/docs/master/system/arm/raspi.html
   cpus = local.machine_type == "raspi3b" ? 4 : var.cpus
   net_device = local.net_device
-  disk_interface = local.machine_type == "raspi3b" ? "sd" : "virtio"
+  disk_interface = local.disk_interface
   # Some OSes may require x86-64-v3 extensions or ARMv8.2-A (rather than ARMv8.0)
   # so just go with host / max to get the fullest feature set we can.
   cpu_model = local.is_x86_64 ? "host" : (local.machine_type == "raspi3b" ? "" : "max")
