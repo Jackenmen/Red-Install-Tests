@@ -315,6 +315,11 @@ class Downloader(_DownloaderBase):
         r = _verify_hash(http.get(url))
 
         drivers_dir = os.path.join(self.windows_dir, "drivers")
+        try:
+            shutil.rmtree(drivers_dir)
+        except FileNotFoundError:
+            pass
+
         with zipfile.ZipFile(BytesIO(r.content or b"")) as archive:
             for os_name in ("Win10", "Win11"):
                 for arch in ("amd64", "ARM64"):
@@ -341,6 +346,11 @@ class Downloader(_DownloaderBase):
         r = _verify_hash(http.get(url))
 
         gsudo_dir = os.path.join(self.windows_dir, "gsudo")
+        try:
+            shutil.rmtree(gsudo_dir)
+        except FileNotFoundError:
+            pass
+
         with zipfile.ZipFile(BytesIO(r.content or b"")) as archive:
             for file in archive.namelist():
                 if file.startswith(("x64/", "arm64/")):
