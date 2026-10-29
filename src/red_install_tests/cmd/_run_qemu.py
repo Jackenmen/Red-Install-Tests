@@ -1,4 +1,5 @@
 import itertools
+import logging
 import os
 import subprocess
 import sys
@@ -164,6 +165,16 @@ def main() -> None:
         subprocess.check_call((qemu_binary, "-version"))
         return
 
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        "_red-install-tests-run-qemu: [{levelname}] {name}: {message}", style="{"
+    )
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setFormatter(formatter)
+    root_logger.addHandler(stdout_handler)
+    logging.captureWarnings(capture=True)
+
     screenshot_path = os.environ.get("RED_INSTALL_TESTS_SCREENSHOT_PATH") or None
     screencast_path = os.environ.get("RED_INSTALL_TESTS_SCREENCAST_PATH") or None
     raw_vnc_args = ""
@@ -184,7 +195,7 @@ def main() -> None:
         thread.start()
         try:
             exit_code = proc.wait()
-            print("QEMU process exited with code:", exit_code)
+            root_logger.info("QEMU process exited with code: %s", exit_code)
         except KeyboardInterrupt:
             pass
         finally:
