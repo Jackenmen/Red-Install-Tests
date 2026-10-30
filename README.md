@@ -8,6 +8,10 @@ This includes:
 - setup for running Red's [installation instructions from `V3/develop` branch](https://docs.discord.red/en/latest/install_guides/index.html) daily (`daily_install_tests_dev.yaml` workflow),
 - on-demand builds for pending PRs and other branches (`test_install_instructions.yaml` workflow)
 
+GitHub provides metrics that can provide failure rate per job (image name): \
+[Actions Performance Metrics - current week, sorted by failure rate](https://github.com/Jackenmen/Red-Install-Tests/actions/metrics/performance?dateRangeType=DATE_RANGE_TYPE_CURRENT_WEEK&sort=failureRate&tab=jobs) \
+This can be helpful in evaluating whether there are any bugs in the harness or transient errors that should be auto-retried.
+
 ## Pre-requirements
 
 - Python 3.14
