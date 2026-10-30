@@ -92,7 +92,7 @@ jobs:
           # Below code generates macOS matrix based on the main OS matrix
           # and then excludes them from the main OS matrix.
           macos_matrix='[]'
-          for os_name in macos-14 macos-15 macos-26; do
+          for os_name in macos-15 macos-26; do
             if jq -e '.matrix | any(.image_spec.name == $image_name)' --arg image_name "$os_name" os-build-run/os_matrix.json; then
               macos_matrix=$(echo "$macos_matrix" | jq -c '. += [$os_name]' --arg os_name "$os_name")
             fi
