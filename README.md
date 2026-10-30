@@ -21,13 +21,14 @@ This includes:
     <thead>
         <tr>
             <th rowspan=2>Host OS</th>
-            <th colspan=4>Guest OS</th>
+            <th colspan=5>Guest OS</th>
         </tr>
         <tr>
             <th scope="col">Linux x86_64</th>
             <th scope="col">Linux aarch64</th>
             <th scope="col">macOS aarch64</th>
             <th scope="col">Windows x86_64</th>
+            <th scope="col">Windows aarch64</th>
         </tr>
     </thead>
     <tbody align="center">
@@ -37,6 +38,7 @@ This includes:
             <td>⚠️<br>emulation-only</td>
             <td>❌</td>
             <td>✅<br><b>recommended</b> host</td>
+            <td>⚠️<br>emulation-only</td>
         </tr>
         <tr>
             <th scope="row">Linux aarch64</th>
@@ -44,6 +46,7 @@ This includes:
             <td>✅<br><b>recommended</b> host</td>
             <td>❌</td>
             <td>⚠️<br>emulation-only</td>
+            <td>✅<br><b>recommended</b> host</td>
         </tr>
         <tr>
             <th scope="row">macOS aarch64</th>
@@ -51,6 +54,7 @@ This includes:
             <td>✅<br>accelerated</td>
             <td>✅<br><b>recommended</b> host</td>
             <td>⚠️<br>emulation-only</td>
+            <td>✅<br>accelerated</td>
         </tr>
         <tr>
             <th scope="row">Windows x86_64</th>
@@ -58,6 +62,7 @@ This includes:
             <td>⚠️<br>emulation-only</td>
             <td>❌</td>
             <td>✅<br>accelerated</td>
+            <td>⚠️<br>emulation-only</td>
         </tr>
     </tbody>
 </table>
