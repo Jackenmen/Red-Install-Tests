@@ -49,6 +49,15 @@ variable "os" {
   }
 }
 
+variable "architecture" {
+  type = string
+  default = "x86_64"
+  validation {
+    condition = contains(["x86_64", "aarch64"], var.architecture)
+    error_message = "The architecture value must be one of: x86_64, aarch64."
+  }
+}
+
 locals {
   attempt = convert(coalesce(var.attempt, 1), number)
   env_vars = merge(

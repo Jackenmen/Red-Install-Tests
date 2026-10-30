@@ -70,15 +70,6 @@ variable "cd_files" {
   default = null
 }
 
-variable "architecture" {
-  type = string
-  default = "x86_64"
-  validation {
-    condition = contains(["x86_64", "aarch64"], var.architecture)
-    error_message = "The architecture value must be one of: x86_64, aarch64."
-  }
-}
-
 variable "efi_firmware_code" {
   type = string
   default = ""

@@ -190,6 +190,7 @@ class BuildDirGenerator:
             "red_package_spec": run_config.package_spec,
             "red_expected_java_version": self.image_spec["expected_java_version"],
             "os": self.image_spec["os"],
+            "architecture": self.image_spec["arch"],
         }
 
     @property
@@ -247,7 +248,6 @@ class QemuBuildDirGenerator(BuildDirGenerator):
         self.packer_vars["iso_url"] = f"file://{pathname2url(self.image_path)}"
         self.packer_vars["output_directory"] = os.path.join(self.build_dir, "output")
         self.packer_vars["ssh_private_key_file"] = self.key_path
-        self.packer_vars["architecture"] = self.image_spec["arch"]
         self.packer_vars["machine_type"] = self.image_spec["machine_type"]
 
         is_x86 = self.image_spec["arch"] == "x86_64"
