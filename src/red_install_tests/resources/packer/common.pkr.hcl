@@ -107,6 +107,8 @@ locals {
   tmp_dir = var.os == "windows" ? "C:/Users/${local.username}/AppData/Local/Temp" : "/tmp"
   tmp_dir_winsep = var.os == "windows" ? replace(local.tmp_dir, "/", "\\") : local.tmp_dir
   default_unix_shell = var.os == "darwin" ? "zsh" : "bash"
+  # set higher timeout for ARM builds because we (usually) have to emulate them
+  cloud_init_timeout = var.architecture == "x86_64" ? 300 : 900
 }
 
 build {
@@ -117,7 +119,7 @@ build {
   provisioner "shell" {
     // cloud-init shouldn't take long once we managed to SSH in
     // so let's just timeout after a few minutes
-    inline = ["timeout 600 cloud-init status --long --wait"]
+    inline = ["timeout ${local.cloud_init_timeout} cloud-init status --long --wait"]
     valid_exit_codes = [0, 124]
     only = var.os == "linux" ? local.sources : [""]
   }
