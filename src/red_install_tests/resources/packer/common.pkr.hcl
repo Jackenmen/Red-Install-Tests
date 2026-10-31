@@ -141,7 +141,7 @@ build {
   // Ensure cloud-init actually succeeded.
   provisioner "shell" {
     inline = ["cloud-init status --long --wait"]
-    timeout = "30s"
+    timeout = "2m"
     only = var.os == "linux" ? local.sources : [""]
   }
 
