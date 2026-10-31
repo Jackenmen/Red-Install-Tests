@@ -245,7 +245,7 @@ class QemuBuildDirGenerator(BuildDirGenerator):
             ) from exc
         image_format, _, _ = self.image_spec["image_format"].partition("+")
         self.packer_vars["use_backing_file"] = image_format == "qcow2"
-        self.packer_vars["iso_url"] = f"file://{pathname2url(self.image_path)}"
+        self.packer_vars["iso_url"] = f"file:{pathname2url(self.image_path)}"
         self.packer_vars["output_directory"] = os.path.join(self.build_dir, "output")
         self.packer_vars["ssh_private_key_file"] = self.key_path
         self.packer_vars["machine_type"] = self.image_spec["machine_type"]
