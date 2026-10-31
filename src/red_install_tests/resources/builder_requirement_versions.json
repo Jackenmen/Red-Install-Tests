@@ -2,6 +2,7 @@
     "7z": "26.03",
     "aavmf": "2022.11-6+deb12u2",
     "gsudo": "2.6.1",
+    "oscdimg": "688CABB065000",
     "ovmf": "2022.11-6+deb12u2",
     "packer": "1.15.3",
     "refreshenv-cmd": "c8659d49508d2a1dcb61ef3548f90552ff86c5c8",

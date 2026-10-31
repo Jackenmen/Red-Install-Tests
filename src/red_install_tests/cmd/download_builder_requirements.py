@@ -41,6 +41,11 @@ SW_AAVMF_BASE_URL: Final = (
 SW_GSUDO_URL: Final = (
     "https://github.com/gerardog/gsudo/releases/download/v{version}/gsudo.portable.zip"
 )
+# URL taken from:
+# https://github.com/microsoft/winget-pkgs/blob/master/manifests/m/Microsoft/OSCDIMG/2.56/Microsoft.OSCDIMG.installer.yaml
+SW_OSCDIMG_BASE_URL: Final = (
+    "https://msdl.microsoft.com/download/symbols/oscdimg.exe/{identifier}/oscdimg.exe"
+)
 SW_OVMF_BASE_URL: Final = "http://ftp.nl.debian.org/debian/pool/main/e/edk2/ovmf_{version}_all.deb"
 SW_PACKER_BASE_URL: Final = (
     "https://releases.hashicorp.com/packer/{version}/packer_{version}_{platform}.zip"
@@ -358,6 +363,17 @@ class Downloader(_DownloaderBase):
 
         print("Downloaded.")
 
+    def download_oscdimg(self, version: str) -> None:
+        print("Downloading oscdimg...")
+
+        url = SW_OSCDIMG_BASE_URL.format(identifier=version)
+        print(f"Fetching {url}...")
+        r = _verify_hash(http.get(url))
+        with open(os.path.join(self.bin_dir, "oscdimg.exe"), "wb") as fp:
+            fp.writelines(r.iter_content())
+
+        print("Downloaded.")
+
     def download_refreshenv_cmd(self, version: str) -> None:
         print("Downloading RefreshEnv.cmd...")
 
@@ -458,6 +474,8 @@ def main(args: argparse.Namespace, /) -> None:
                     requirements.append("win32-openssh-arm64")
         elif image_spec["spec_type"] == "tart":
             requirements.append("tart")
+        if IS_WINDOWS:
+            requirements.append("oscdimg")
 
         downloader.run(requirements)
 
