@@ -140,7 +140,7 @@ class Downloader(_DownloaderBase):
             with open(installer, "wb") as fp:
                 fp.writelines(r.iter_content())
 
-            subprocess.check_call((extractor, "x", "-o", tmpdirname, installer))
+            subprocess.check_call((extractor, "x", f"-o{tmpdirname}", installer))
 
             for filename in ("7z.dll", "7z.exe"):
                 shutil.move(
