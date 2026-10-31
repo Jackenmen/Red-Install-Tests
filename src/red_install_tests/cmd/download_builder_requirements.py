@@ -335,7 +335,7 @@ class Downloader(_DownloaderBase):
                         "viostor.inf",
                         "viostor.sys",
                     ):
-                        archive.extract(os.path.join(os_name, arch, filename), drivers_dir)
+                        archive.extract(f"{os_name}/{arch}/{filename}", drivers_dir)
         print("Downloaded.")
 
     def download_gsudo(self, version: str) -> None:
