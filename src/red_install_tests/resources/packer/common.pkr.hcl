@@ -115,6 +115,13 @@ build {
   name = var.build_name
   sources = local.sources
 
+  // Create directory for Windows SSH logs
+  provisioner "shell-local" {
+    command = "unused-placeholder"
+    execute_command = ["mkdir", "${path.root}/win-ssh-logs-${local.attempt}"]
+    only = var.os == "windows" ? local.sources : [""]
+  }
+
   // Ensure cloud-init finishes before doing anything.
   provisioner "shell" {
     // cloud-init shouldn't take long once we managed to SSH in
@@ -238,6 +245,14 @@ build {
       remote_path = "${local.tmp_dir}/script-${uuidv4()}.py"
       env = local.env_vars
     }
+  }
+
+  // Download Windows SSH logs
+  error-cleanup-provisioner "file" {
+    direction = "download"
+    source = "C:/ProgramData/ssh/logs/"
+    destination = "${path.root}/win-ssh-logs-${local.attempt}/"
+    only = var.os == "windows" ? local.sources : [""]
   }
 
   // Remove the output directory since we don't actually need the built image.

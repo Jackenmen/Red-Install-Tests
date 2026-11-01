@@ -27,8 +27,11 @@ $authorizedKey = Get-Content -Path $cidata_dir\ssh.key.pub
 Add-Content -Force -Path $env:ProgramData\ssh\administrators_authorized_keys -Value $authorizedKey
 icacls.exe ""$env:ProgramData\ssh\administrators_authorized_keys"" /inheritance:r /grant ""Administrators:F"" /grant ""SYSTEM:F""
 
+# Enable file-based debug logging in the SSH server
+Add-Content -Path $env:ProgramData\ssh\sshd_config -Value "`nMatch all`nSyslogFacility LOCAL0`nLogLevel Debug3`n"
+
 # Start SSH server
-Start-Service sshd
+Restart-Service sshd
 Set-Service -Name sshd -StartupType 'Automatic'
 # Confirm the Firewall rule is configured. It should be created automatically by setup. Run the following to verify
 if (!(Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue)) {
