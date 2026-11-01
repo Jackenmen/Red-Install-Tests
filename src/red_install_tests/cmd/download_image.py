@@ -91,7 +91,9 @@ def _cache_image(image_spec: DiskImageSpec, cache_dir: str) -> None:
                 fail_reason = exc.reason
             except pyhaul.UnexpectedStatusError as exc:
                 wait = (
-                    exc.retry_after_seconds
+                    # GH-7: pyhaul doesn't cap the value received from Retry-After,
+                    # let's ensure we don't just wait indefinitely
+                    min(exc.retry_after_seconds, 15 * 60)
                     if exc.retry_after_seconds is not None
                     else min(2**attempt, 60)
                 )
