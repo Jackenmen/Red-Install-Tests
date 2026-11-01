@@ -114,6 +114,7 @@ locals {
     [
       ["-machine", "type=${local.machine_type},accel=hvf:kvm:whpx:tcg"],
       ["-serial", "stdio"],
+      ["-d", "trace:vm_state_notify"],
       ["-device", "${local.net_device},netdev=user.0"],
       ["-device", "usb-kbd"],
       ["-device", "usb-tablet"],
