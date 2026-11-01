@@ -13,6 +13,7 @@ from io import BytesIO
 from typing import ClassVar, Final, Self
 from urllib.parse import urlsplit
 
+import arpy
 import niquests
 
 from red_install_tests import http
@@ -193,43 +194,38 @@ class Downloader(_DownloaderBase):
         destination: str,
         files: Iterable[str],
     ) -> None:
-        self._ensure_installed("7z")
-
         print(f"Downloading {req_name}...")
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            print(f"Fetching {url}...")
-            deb_file = os.path.join(tmpdirname, "package.deb")
-            r = _verify_hash(http.get(url))
-            with open(deb_file, "wb") as fp:
-                fp.writelines(r.iter_content())
+        print(f"Fetching {url}...")
+        r = _verify_hash(http.get(url))
 
-            data_file = "data.tar"
-            subprocess.check_call((self.bin_7z, "x", f"-o{tmpdirname}", deb_file, data_file))
-            for filepath in files:
-                while True:
-                    filedir, filename = filepath.rsplit("/", 1)
-                    subprocess.check_call(
-                        (
-                            self.bin_7z,
-                            "x",
-                            f"-o{tmpdirname}",
-                            os.path.join(tmpdirname, data_file),
-                            filepath,
-                        )
-                    )
-                    target_path = os.path.join(destination, filename)
-                    try:
-                        os.remove(target_path)
-                    except FileNotFoundError:
-                        pass
-                    shutil.move(os.path.join(tmpdirname, filepath), target_path)
-                    try:
-                        link_target = os.readlink(target_path)
-                    except OSError:
-                        break
-                    if os.sep in link_target:
-                        raise RuntimeError("symlinks to different dir not supported")
-                    filepath = f"{filedir}/{link_target}"
+        missing_files = set(files)
+
+        with (
+            arpy.Archive(fileobj=BytesIO(r.content or b"")) as ar,
+            ar.open(b"data.tar.xz") as fp,
+            tarfile.open(fileobj=fp) as archive,
+        ):
+            members = []
+            for m in archive.getmembers():
+                try:
+                    missing_files.remove(m.name)
+                except KeyError:
+                    continue
+                members.append(m)
+
+            if missing_files:
+                raise RuntimeError(
+                    "could not find the following files in the deb file:"
+                    f" {', '.join(missing_files)}"
+                )
+
+            def _strip_dir(member: tarfile.TarInfo, path: str, /) -> tarfile.TarInfo | None:
+                ret = tarfile.data_filter(member, path)
+                if ret is None:
+                    return None
+                return ret.replace(name=os.path.basename(ret.name))
+
+            archive.extractall(destination, members=members, filter=_strip_dir)
 
         print("Downloaded.")
 
@@ -254,7 +250,6 @@ class Downloader(_DownloaderBase):
                 for suffix in ("CODE_4M.fd", "CODE_4M.secboot.fd", "VARS_4M.fd", "VARS_4M.ms.fd")
             ),
         )
-        print("Downloaded.")
 
     def download_packer(self, version: str) -> None:
         print("Downloading Packer...")
