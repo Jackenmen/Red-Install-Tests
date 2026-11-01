@@ -70,22 +70,6 @@ SW_WIN32_OPENSSH_URL: Final = (
     "https://github.com/PowerShell/Win32-OpenSSH/releases/download/{release_tag}"
     "/OpenSSH-{platform}-v{version}.msi"
 )
-REFRESHENV_CMD_LINE_MAPPINGS = {
-    (
-        """    'wmic Process"""
-        ''' WHERE "Name='!CmdExeName!' AND CommandLine LIKE '%%!uid!%%'"'''
-        """ GET ParentProcessID /value'\r\n"""
-    ): (
-        """    'powershell -command "Get-CimInstance -ClassName Win32_Process"""
-        ''' -Filter \\"Name='!CmdExeName!' AND CommandLine LIKE '%%!uid!%%'\\"'''
-        """ | Select-Object -ExpandProperty ParentProcessId"'\r\n"""
-    ),
-    """        'wmic Process WHERE "Handle='%%i'" GET CommandLine /value'\r\n""": (
-        """        'powershell -command "Get-CimInstance -Class Win32_Process"""
-        ''' -Filter \\"Handle='%%i'\\"'''
-        """ | Select-Object -ExpandProperty CommandLine"'\r\n"""
-    ),
-}
 
 
 def _verify_hash(r: niquests.Response) -> niquests.Response:
@@ -378,11 +362,12 @@ class Downloader(_DownloaderBase):
         print(f"Fetching {url}...")
         r = _verify_hash(http.get(url))
         with open(
-            os.path.join(self.windows_dir, "RefreshEnv.cmd"), "w", encoding="utf-8-sig", newline=""
+            os.path.join(self.windows_dir, "RefreshEnv.cmd"), "w", encoding="utf-8", newline=""
         ) as fp:
             fp.writelines(
-                REFRESHENV_CMD_LINE_MAPPINGS.get(line, line)
-                for line in (r.text or "").splitlines(keepends=True)
+                line
+                for line_number, line in enumerate((r.text or "").splitlines(keepends=True), 1)
+                if line_number in (1, 4) or line_number >= 64
             )
 
         print("Downloaded.")
