@@ -359,6 +359,8 @@ class Downloader(_DownloaderBase):
         print("Downloaded.")
 
     def download_oscdimg(self, version: str) -> None:
+        if not IS_WINDOWS:
+            return
         print("Downloading oscdimg...")
 
         url = SW_OSCDIMG_BASE_URL.format(identifier=version)
