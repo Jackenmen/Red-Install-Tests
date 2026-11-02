@@ -504,7 +504,7 @@ jobs:
               --jq '
                 .jobs[]
                 | select(.name | endswith(" - Test install instructions"))
-                | select(.name | startswith("${{ '${{' }}") | not)
+                | select(.name | startswith("$" + "{{") | not)
                 | "\(.name | split(" / ")[-1] | split(" ")[0]) \(.conclusion) \(.url)"
               '
           )
