@@ -584,7 +584,7 @@ jobs:
             echo "| [$image_name]($url) | $conclusion_emoji $conclusion | $attempt_count | $artifact_links |" >> "$GITHUB_STEP_SUMMARY"
           done
 
-          if [[ " ${job_conclusions[@]} " == *' failure '* ]]; then
+          if [[ " ${job_conclusions[*]} " == *' failure '* ]]; then
             echo '# Failed jobs' >> "$GITHUB_STEP_SUMMARY"
             for image_name in "${image_names[@]}"; do
               conclusion="${job_conclusions[$image_name]}"
