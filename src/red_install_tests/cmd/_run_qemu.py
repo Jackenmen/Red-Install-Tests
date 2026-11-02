@@ -174,6 +174,7 @@ def main() -> None:
     stdout_handler.setFormatter(formatter)
     root_logger.addHandler(stdout_handler)
     logging.captureWarnings(capture=True)
+    logging.getLogger("twisted").setLevel(logging.WARNING)
 
     screenshot_path = os.environ.get("RED_INSTALL_TESTS_SCREENSHOT_PATH") or None
     screencast_path = os.environ.get("RED_INSTALL_TESTS_SCREENCAST_PATH") or None
