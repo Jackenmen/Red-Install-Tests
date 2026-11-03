@@ -198,5 +198,6 @@ source "qemu" "tests" {
   # - for any ARM build, it needs to be larger because we (usually) have to emulate it and everything is slower
   # - for Linux x86_64, boot takes only around a minute
   ssh_timeout = (var.os == "windows" ? (!local.is_x86_64 ? "245m" : "35m") : (!local.is_x86_64 ? "20m" : "5m"))
+  ssh_file_transfer_method = "sftp"
   qemuargs = local.qemu_args
 }
