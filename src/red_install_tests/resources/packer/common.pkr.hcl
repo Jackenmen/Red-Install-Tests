@@ -108,7 +108,7 @@ locals {
   tmp_dir_winsep = var.os == "windows" ? replace(local.tmp_dir, "/", "\\") : local.tmp_dir
   default_unix_shell = var.os == "darwin" ? "zsh" : "bash"
   # set higher timeout for ARM builds because we (usually) have to emulate them
-  cloud_init_timeout = var.architecture == "x86_64" ? 300 : 900
+  system_boot_timeout = var.architecture == "x86_64" ? 300 : 7200
 }
 
 build {
@@ -122,12 +122,24 @@ build {
     only = var.os == "windows" ? local.sources : [""]
   }
 
-  // Ensure cloud-init finishes before doing anything.
+  // Ensure the system is fully booted before doing anything.
   provisioner "shell" {
-    // cloud-init shouldn't take long once we managed to SSH in
-    // so let's just timeout after a few minutes
-    inline = ["timeout ${local.cloud_init_timeout} cloud-init status --long --wait"]
-    valid_exit_codes = [0, 124]
+    inline = ["timeout ${local.system_boot_timeout} systemctl is-system-running --wait"]
+    valid_exit_codes = [0, 1, 124]
+    only = var.os == "linux" ? local.sources : [""]
+  }
+
+  // Print systemd status.
+  provisioner "shell" {
+    inline = ["systemctl status --no-pager"]
+    only = var.os == "linux" ? local.sources : [""]
+  }
+
+  // Ensure that the wait for system to fully boot actually succeeded.
+  provisioner "shell" {
+    inline = ["systemctl is-system-running --wait"]
+    valid_exit_codes = [0, 1]
+    timeout = "2m"
     only = var.os == "linux" ? local.sources : [""]
   }
 
