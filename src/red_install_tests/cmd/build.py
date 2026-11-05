@@ -43,6 +43,8 @@ TRANSIENT_ERROR_PATTERN = _compile_pattern(
                 |W: Failed to fetch .+  50[023]  ([A-Za-z]+ )+\[IP: \d+(\.\d+){3} \d+\]$
                 |lazr\.restfulclient\.errors\.ServerError: HTTP Error 500
             )
+            |macos-([a-z0-9\-]+)\.[a-z]+\.tests:
+            \ Error: Failed to download https://formulae\.brew\.sh/api/internal/packages\.
         )
     )
     """
