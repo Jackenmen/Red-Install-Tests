@@ -15,7 +15,14 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from red_install_tests.cli import add_deps_dir_option, parser_spec, run
-from red_install_tests.image_location import DiskImageSpec, ImageSpec, SSHImageSpec, TartImageSpec
+from red_install_tests.image_location import (
+    RASPBERRY_PI_MODELS,
+    DiskImageSpec,
+    ImageSpec,
+    RaspberryPiModel,
+    SSHImageSpec,
+    TartImageSpec,
+)
 from red_install_tests.job_config import JOBS_DIR, JobConfig, get_job_config
 from red_install_tests.resources import RESOURCES
 from red_install_tests.run_config import DEFAULT_RUN_DIR, RunConfig, get_run_config
@@ -288,10 +295,10 @@ class QemuBuildDirGenerator(BuildDirGenerator):
             f"/{filename}": content for filename, content in cloud_init_files.items()
         }
         self.packer_vars["cd_content"] = cloud_init_files
-        if self.image_spec["machine_type"] == "raspi3b":
-            self._prepare_linux_raspi3b_specific_config()
+        if self.image_spec["machine_type"] in RASPBERRY_PI_MODELS:
+            self._prepare_linux_raspi_specific_config(self.image_spec["machine_type"])
 
-    def _prepare_linux_raspi3b_specific_config(self) -> None:
+    def _prepare_linux_raspi_specific_config(self, machine_type: RaspberryPiModel) -> None:
         try:
             subprocess.check_call(
                 (
@@ -300,6 +307,8 @@ class QemuBuildDirGenerator(BuildDirGenerator):
                     "red_install_tests.cmd.prepare_raspi_img",
                     self.image_path,
                     self.build_dir,
+                    "--model",
+                    machine_type,
                 )
             )
         except subprocess.CalledProcessError as exc:

@@ -18,6 +18,7 @@ import niquests
 
 from red_install_tests import http
 from red_install_tests.cli import add_deps_dir_option, add_job_dir_option, parser_spec, run
+from red_install_tests.image_location import RASPBERRY_PI_MODELS
 from red_install_tests.job_config import get_host_architecture, get_job_config
 from red_install_tests.resources import RESOURCES
 
@@ -443,7 +444,7 @@ def main(args: argparse.Namespace, /) -> None:
                 requirements.append("ovmf")
             else:
                 requirements.append("aavmf")
-            if image_spec["machine_type"] == "raspi3b":
+            if image_spec["machine_type"] in RASPBERRY_PI_MODELS:
                 requirements.append("7z")
                 requirements.append("rpi-utils")
             if image_spec["os"] == "windows":

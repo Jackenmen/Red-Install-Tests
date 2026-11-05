@@ -5,14 +5,14 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Final, Literal
+from typing import Final
 
 from red_install_tests.cli import parser_spec, run
+from red_install_tests.image_location import RASPBERRY_PI_MODELS, RaspberryPiModel
 
 StrPath = os.PathLike | str
 MODEL_RASPI3B: Final = "raspi3b"
 MODEL_RASPI4B: Final = "raspi4b"
-RaspberryPiModel = Literal["raspi3b", "raspi4b"]
 
 DTB_FILENAMES: Final[dict[RaspberryPiModel, str]] = {
     MODEL_RASPI3B: "bcm2710-rpi-3-b.dtb",
@@ -93,7 +93,7 @@ def apply_dtb_config(
 
 @parser_spec
 def setup_parser(parser: argparse.ArgumentParser, /) -> None:
-    parser.add_argument("--model", choices=tuple(DTB_FILENAMES.keys()), default=MODEL_RASPI3B)
+    parser.add_argument("--model", choices=RASPBERRY_PI_MODELS, default=MODEL_RASPI3B)
     parser.add_argument("img_file")
     parser.add_argument("output_dir")
     parser.set_defaults(func=main)

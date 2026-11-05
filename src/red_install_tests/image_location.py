@@ -2,7 +2,15 @@ import base64
 import functools
 import re
 from collections.abc import Callable, Hashable
-from typing import Any, Final, Literal, NotRequired, ReadOnly, assert_never
+from typing import (
+    Any,
+    Final,
+    Literal,
+    NotRequired,
+    ReadOnly,
+    assert_never,
+    get_args as typing_get_args,
+)
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import jsonquerylang
@@ -49,8 +57,11 @@ ArchType = Literal["x86_64", "aarch64"]
 ChecksumStyle = Literal["bsd", "gnu"]
 ChecksumType = Literal["sha256", "sha512"]
 ImageFormatType = Literal["qcow2", "raw", "raw+xz"]
-MachineType = Literal["raspi3b", None]
+RaspberryPiModel = Literal["raspi3b", "raspi4b"]
+MachineType = Literal[RaspberryPiModel, None]
 BootModeType = Literal["bios", "uefi", "uefi-secure-boot"]
+
+RASPBERRY_PI_MODELS: Final[tuple[str, ...]] = typing_get_args(RaspberryPiModel)
 
 
 class _BaseImageLocation(TypedDict):
@@ -168,7 +179,7 @@ ImageSpec = DiskImageSpec | SSHImageSpec | TartImageSpec
 
 
 def _get_default_boot_mode(machine_type: MachineType) -> BootModeType:
-    if machine_type == "raspi3b":
+    if machine_type in RASPBERRY_PI_MODELS:
         return "bios"
     # Using EFI versions without Secure Boot by default
     # since Secure Boot works pretty poorly across the large number of OSes we test.

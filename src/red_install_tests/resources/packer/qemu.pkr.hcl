@@ -88,9 +88,10 @@ variable "extra_qemu_args" {
 locals {
   is_x86_64 = var.architecture == "x86_64"
   machine_type = coalesce(var.machine_type, local.is_x86_64 ? "q35" : "virt")
-  net_device = local.machine_type == "raspi3b" ? "usb-net" : "virtio-net"
+  is_raspi = contains(["raspi3b", "raspi4b"], local.machine_type)
+  net_device = local.is_raspi ? "usb-net" : "virtio-net"
   qemu_args = concat(
-    local.machine_type == "raspi3b" ? [] : [
+    local.is_raspi ? [] : [
       ["-device", "qemu-xhci"],
       # To avoid issues with multiple displays being detected by the OS and us being able to
       # see only one of them through VNC, we only configure a single display device.
@@ -114,12 +115,12 @@ locals {
     [
       ["-machine", "type=${local.machine_type},accel=hvf:kvm:whpx:tcg"],
       ["-serial", "stdio"],
-      ["-d", "trace:vm_state_notify"],
       ["-device", "${local.net_device},netdev=user.0"],
+      ["-d", "trace:vm_state_notify"],
       ["-device", "usb-kbd"],
       ["-device", "usb-tablet"],
     ],
-    local.is_x86_64 || local.machine_type == "raspi3b" ? [] : [
+    local.is_x86_64 || local.is_raspi ? [] : [
       for i in range(
         (var.disk_image ? 0 : 1) + (var.cd_content != null || var.cd_files != null ? 1 : 0)
       ) : ["-device", "usb-storage,drive=cdrom${i}"]
@@ -152,7 +153,7 @@ source "qemu" "tests" {
   # - Windows 11 refuses to install on a partition smaller than 52 GB so we need 53 GB
   # When disk_interface is an SD card, this must be a power of 2,
   # so we'll just special-case Raspberry Pi 3B.
-  disk_size = local.machine_type == "raspi3b" ? "16G" : "53G"
+  disk_size = local.is_raspi ? "16G" : "53G"
 
   # avoid launching a GUI for the VNC connection
   headless = var.headless
@@ -161,10 +162,10 @@ source "qemu" "tests" {
   ssh_private_key_file = var.ssh_private_key_file
   http_content = var.http_content
   floppy_files = var.floppy_files
-  cd_content = local.machine_type == "raspi3b" ? null : var.cd_content
-  cd_files = local.machine_type == "raspi3b" ? null : var.cd_files
+  cd_content = local.is_raspi ? null : var.cd_content
+  cd_files = local.is_raspi ? null : var.cd_files
   cd_label = "cidata"
-  cdrom_interface = local.is_x86_64 || local.machine_type == "raspi3b" ? "" : "none"
+  cdrom_interface = local.is_x86_64 || local.is_raspi ? "" : "none"
   ssh_username = local.username
 
   # Keystrokes to send over VNC, only needed on Windows in UEFI mode
@@ -177,19 +178,24 @@ source "qemu" "tests" {
   qemu_binary = coalesce(var.red_install_tests_qemu, "qemu-system-${var.architecture}")
 
   # RAM values:
-  # - for Raspberry Pi 3B, it needs to match the actual board (1 GB)
+  # - for Raspberry Pi 3B and 4B, it needs to match the actual board (1 GB and 2 GB, respectively)
   # - for Windows, the minimum is 4 GB
   # - for Linux, the minimum of some distros (RHEL derivatives) is 1.5 GB
-  memory = local.machine_type == "raspi3b" ? 1024 : (var.os == "windows" ? 4096 : 1536)
+  memory = (
+    local.machine_type == "raspi3b" ? 1024 :
+    local.machine_type == "raspi4b" ? 2048 :
+    var.os == "windows" ? 4096 :
+    1536
+  )
 
   # Use correct specs for Raspberry Pi 3B board emulation
   # https://www.qemu.org/docs/master/system/arm/raspi.html
-  cpus = local.machine_type == "raspi3b" ? 4 : var.cpus
+  cpus = local.is_raspi ? 4 : var.cpus
   net_device = local.net_device
-  disk_interface = local.machine_type == "raspi3b" ? "sd" : "virtio"
+  disk_interface = local.is_raspi ? "sd" : "virtio"
   # Some OSes may require x86-64-v3 extensions or ARMv8.2-A (rather than ARMv8.0)
   # so just go with host / max to get the fullest feature set we can.
-  cpu_model = local.is_x86_64 ? "host" : (local.machine_type == "raspi3b" ? "" : "max")
+  cpu_model = local.is_x86_64 ? "host" : (local.is_raspi ? "" : "max")
   efi_firmware_code = var.efi_firmware_code
   efi_firmware_vars = var.efi_firmware_vars
 
