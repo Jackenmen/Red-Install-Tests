@@ -256,7 +256,6 @@ jobs:
     runs-on: >-
       ${{ case(
           matrix.image_spec.os == 'darwin', 'macos-latest',
-          matrix.image_spec.name == 'ubuntu-2604-arm-raspi', 'ubuntu-22.04',
           startsWith(matrix.image_spec.machine_type, 'raspi'), 'ubuntu-24.04',
           matrix.image_spec.arch == 'aarch64', 'ubuntu-26.04',
           'ubuntu-26.04'
@@ -305,11 +304,29 @@ jobs:
       - name: Install Hatch
         uses: pypa/hatch@install
 
+      - name: Install QEMU (Linux testing raspi4b)
+        if: runner.os == 'Linux' && matrix.image_spec.machine_type == 'raspi4b'
+        run: |
+          sudo apt-get update
+          sudo apt-get install $(apt-cache depends qemu-system-x86 qemu-system-arm qemu-system-xen | grep -E 'Recommends|Depends' | sed "s/.*ends:\ //" | tr '\n' ' ')
+
+          cd /tmp
+          archive_name='qemu-bin-11.2.0-b0-ubuntu-24.04.tar.xz'
+          wget "https://github.com/Jackenmen/qemu-ubuntu-bin/releases/download/11.2.0-b0/$archive_name"
+          echo "512b665815289fcaa4fb141dae2502c7d3a269dd21339017fe6ec2778e186409 $archive_name" | sha256sum -c
+          sudo tar xvf "$archive_name" -C /usr/local
+          rm "$archive_name"
+
+      - name: Install QEMU (Linux)
+        if: runner.os == 'Linux' && matrix.image_spec.machine_type != 'raspi4b'
+        run: |
+          sudo apt-get update
+          sudo apt-get install qemu-system
+
       - name: Download builder requirements (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install qemu-system xorriso
+          sudo apt-get install xorriso
           # `usermod -aG "$USER" kvm` doesn't seem to be enough so just chown it...
           if [[ -e /dev/kvm ]]; then
             sudo chown "$USER" /dev/kvm
