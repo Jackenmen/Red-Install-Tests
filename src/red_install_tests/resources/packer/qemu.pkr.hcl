@@ -89,7 +89,7 @@ locals {
   is_x86_64 = var.architecture == "x86_64"
   machine_type = coalesce(var.machine_type, local.is_x86_64 ? "q35" : "virt")
   is_raspi = contains(["raspi3b", "raspi4b"], local.machine_type)
-  net_device = local.is_raspi ? "usb-net" : "virtio-net"
+  net_device = local.machine_type == "raspi4b" ? "-" : (local.is_raspi ? "usb-net" : "virtio-net")
   qemu_args = concat(
     local.is_raspi ? [] : [
       ["-device", "qemu-xhci"],
@@ -115,10 +115,12 @@ locals {
     [
       ["-machine", "type=${local.machine_type},accel=hvf:kvm:whpx:tcg"],
       ["-serial", "stdio"],
-      ["-device", "${local.net_device},netdev=user.0"],
       ["-d", "trace:vm_state_notify"],
       ["-device", "usb-kbd"],
       ["-device", "usb-tablet"],
+      local.machine_type == "raspi4b"
+        ? ["-net", "nic,netdev=user.0"]
+        : ["-device", "${local.net_device},netdev=user.0"],
     ],
     local.is_x86_64 || local.is_raspi ? [] : [
       for i in range(
