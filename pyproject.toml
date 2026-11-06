@@ -178,4 +178,4 @@ combine-as-imports = true
 include = ["src/red_install_tests/resources/tests/*.py"]
 
 [tool.ty.overrides.rules]
-unresolved-import = "ignore"
+import-not-found = "ignore"
