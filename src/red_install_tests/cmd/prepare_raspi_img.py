@@ -74,6 +74,7 @@ def apply_dtb_config(
     with open(config_file, "r+", encoding="utf-8") as fp:
         content = fp.read()
         fp.seek(0)
+        fp.write("[all]\ndtparam=watchdog=off\n")
         fp.write(re.sub(r"^dtoverlay=vc4-kms-v3d($|,.+$)", "", content, flags=re.MULTILINE))
         fp.truncate()
 
