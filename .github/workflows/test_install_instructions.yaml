@@ -24,6 +24,10 @@ on:
         type: number
       image-name-patterns:
         type: string
+      include-raspi:
+        type: boolean
+        description: Include jobs that use `raspi*` machine types. This is considered unstable.
+        default: false
   workflow_call:
     inputs:
       repo:
@@ -37,6 +41,10 @@ on:
         type: number
       image-name-patterns:
         type: string
+      include-raspi:
+        type: boolean
+        description: Include jobs that use `raspi*` machine types. This is considered unstable.
+        default: false
 
 jobs:
   generate-matrix:
@@ -71,6 +79,7 @@ jobs:
           INPUTS_VERSION: ${{ inputs.version }}
           INPUTS_PULL_REQUEST: ${{ inputs.pull-request }}
           INPUTS_IMAGE_NAME_PATTERNS: ${{ inputs.image-name-patterns }}
+          INPUTS_INCLUDE_RASPI: ${{ inputs.include-raspi }}
           RED_PYTHON_EXECUTABLE: ${{ steps.red-python.outputs.python-path }}
         run: |
           read -ra inputs <<< "$INPUTS_IMAGE_NAME_PATTERNS"
@@ -85,7 +94,10 @@ jobs:
             inputs+=(--pr "$INPUTS_PULL_REQUEST")
           fi
           hatch run generate-bare-run "${inputs[@]}"
-          (echo -n 'run-config=' && cat os-build-run/run_config.json && echo) >> "$GITHUB_OUTPUT"
+
+          run_config=$(< os-build-run/run_config.json)
+          os_matrix=$(< os-build-run/os_matrix.json)
+
           # macOS does not support nested virtualization so we have to skip Tart-based images:
           # https://github.com/actions/runner-images/issues/13505
           # Instead, we'll run these directly on the GH Actions runner.
@@ -93,12 +105,21 @@ jobs:
           # and then excludes them from the main OS matrix.
           macos_matrix='[]'
           for os_name in macos-15 macos-26; do
-            if jq -e '.matrix | any(.image_spec.name == $image_name)' --arg image_name "$os_name" os-build-run/os_matrix.json; then
+            if echo "$os_matrix" | jq -e '.matrix | any(.image_spec.name == $image_name)' --arg image_name "$os_name"; then
               macos_matrix=$(echo "$macos_matrix" | jq -c '. += [$os_name]' --arg os_name "$os_name")
             fi
           done
-          echo "macos-matrix=$macos_matrix" >> "$GITHUB_OUTPUT"
-          (echo -n 'os-matrix=' && jq -c '.matrix |= map(select(.image_spec.os != "darwin"))' os-build-run/os_matrix.json) >> "$GITHUB_OUTPUT"
+          os_matrix=$(echo "$os_matrix" | jq -c '.matrix |= map(select(.image_spec.os != "darwin"))')
+
+          if [[ "$INPUTS_INCLUDE_RASPI" == 'false' ]]; then
+            os_matrix=$(echo "$os_matrix" | jq -c '.matrix |= map(select(.image_spec.machine_type // "" | startswith("raspi") | not))')
+          fi
+
+          {
+            echo "run-config=$run_config"
+            echo "macos-matrix=$macos_matrix"
+            echo "os-matrix=$os_matrix"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Add run configuration to workflow summary
         run: |
@@ -254,13 +275,13 @@ jobs:
     # using Linux ARM runners for this right now:
     # https://github.com/actions/runner-images/issues/14062
     runs-on: >-
-      ${{ case(
+      ${{
+        case(
           matrix.image_spec.os == 'darwin', 'macos-latest',
-          matrix.image_spec.name == 'ubuntu-2604-arm-raspi', 'ubuntu-22.04',
-          startsWith(matrix.image_spec.machine_type, 'raspi'), 'ubuntu-24.04',
           matrix.image_spec.arch == 'aarch64', 'ubuntu-26.04',
           'ubuntu-26.04'
-      ) }}
+        )
+      }}
     permissions:
       contents: read
 
