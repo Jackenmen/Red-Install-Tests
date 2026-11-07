@@ -319,9 +319,15 @@ class QemuBuildDirGenerator(BuildDirGenerator):
         network_config = {
             "version": 2,
             "ethernets": {
-                "default": {
+                "default-en": {
                     "match": {
                         "name": "en*",
+                    },
+                    "dhcp4": True,
+                },
+                "default-eth": {
+                    "match": {
+                        "name": "eth*",
                     },
                     "dhcp4": True,
                 },
