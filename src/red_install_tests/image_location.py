@@ -352,7 +352,7 @@ def _autoretry[T: ImageLocation, U: ImageSpec](func: Callable[[T], U]) -> Callab
         for attempt in range(1, _ATTEMPT_COUNT + 1):
             try:
                 return func(location)
-            except niquests.HTTPError as e:
+            except (niquests.ConnectionError, niquests.HTTPError) as e:
                 exc = e
                 print(f"{location['name']}: Attempt {attempt} failed with error: {exc!r}")
 
