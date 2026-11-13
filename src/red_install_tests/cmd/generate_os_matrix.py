@@ -7,6 +7,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import tomllib
 from typing import Any, Final
 
 from red_install_tests.cli import add_name_patterns_argument, add_run_dir_option, parser_spec, run
@@ -110,10 +111,28 @@ def main(args: argparse.Namespace, /) -> None:
     run_config = get_run_config(args.run_dir)
     patterns = set(args.patterns or run_config.patterns or ["*"])
     found_patterns = set()
+
+    with open(os.path.join(red_repo_dir, "pyproject.toml"), "rb") as fp:
+        pyproject = tomllib.load(fp)
+
+    min_python_version = min(
+        (3, int(classifier.removeprefix("Programming Language :: Python :: 3.")))
+        for classifier in pyproject["project"]["classifiers"]
+        if classifier.startswith("Programming Language :: Python :: 3.")
+    )
+    red_python_executable = os.getenv("RED_PYTHON_EXECUTABLE")
+    if red_python_executable:
+        red_python_executable_args = (red_python_executable,)
+    elif sys.version_info[:2] == min_python_version:
+        red_python_executable_args = (sys.executable,)
+    elif sys.platform == "win32":
+        red_python_executable_args = ("py", f"-{'.'.join(map(str, min_python_version))}")
+    else:
+        red_python_executable_args = (f"python{'.'.join(map(str, min_python_version))}",)
+
     with tempfile.TemporaryDirectory() as tmpdirname:
         venv_dir = os.path.join(tmpdirname, "venv")
-        red_python_executable = os.getenv("RED_PYTHON_EXECUTABLE") or sys.executable
-        subprocess.check_call((red_python_executable, "-m", "venv", venv_dir))
+        subprocess.check_call((*red_python_executable_args, "-m", "venv", venv_dir))
         scripts_dir = _get_scripts_dir(venv_dir)
         venv_python = os.path.join(scripts_dir, "python" + sysconfig.get_config_var("EXE"))
         subprocess.check_call((venv_python, "-m", "pip", "install", "-U", "pip"))
