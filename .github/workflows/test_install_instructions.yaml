@@ -62,11 +62,34 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v6
 
+      - name: Determine Python versions to install
+        id: available-python-versions
+        run: |
+          arch=$(node -e 'console.log(os.arch())')
+          platform_version=$(lsb_release --short --release)
+          versions_manifest=$(curl https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json)
+
+          {
+              echo 'PYTHON_VERSIONS<<EOF'
+              echo "$versions_manifest" | jq --arg arch "$arch" --arg platform_version "$platform_version" -r '
+                  [
+                      .[]
+                      | select(.stable)
+                      | ((.version | split("."))[:2] | join(".")) as $version
+                      | .files[]
+                      | select(.platform == "linux" and .arch == $arch and .platform_version == $platform_version)
+                      | {version: $version, file: .}
+                  ]
+                  | group_by(.version)[]
+                  | .[0].version
+              '
+              echo EOF
+          } >> "$GITHUB_OUTPUT"
+
       - name: Setup Python for building Red docs
-        id: red-python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.8'
+          python-version: ${{ steps.available-python-versions.outputs.PYTHON_VERSIONS }}
 
       - name: Install Hatch
         uses: pypa/hatch@install
@@ -80,7 +103,6 @@ jobs:
           INPUTS_PULL_REQUEST: ${{ inputs.pull-request }}
           INPUTS_IMAGE_NAME_PATTERNS: ${{ inputs.image-name-patterns }}
           INPUTS_INCLUDE_RASPI: ${{ inputs.include-raspi }}
-          RED_PYTHON_EXECUTABLE: ${{ steps.red-python.outputs.python-path }}
         run: |
           read -ra inputs <<< "$INPUTS_IMAGE_NAME_PATTERNS"
           inputs+=(--repo "$INPUTS_REPO")
