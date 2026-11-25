@@ -25,8 +25,12 @@ TRANSIENT_ERROR_PATTERN = _compile_pattern(
     ^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} (
         # install command transient errors
         ui error: ==> (
-            windows-([a-z0-9\-]+)\.[a-z]+\.tests:
-            \ The system cannot find the path specified\.$
+            windows-([a-z0-9\-]+)\.[a-z]+\.tests: (
+                The system cannot find the path specified\.$
+                # https://github.com/chocolatey/choco/issues/1609
+                |Failed to fetch results from V2 feed at '.+' with following message
+                \ : Response status code does not indicate success: 5\d{2}[ ]
+            )
             |((alma|amazon|oracle|rocky)-linux|centos|fedora)-([a-z0-9\-]+)\.[a-z]+\.tests: (
                 \ +- (
                     nothing provides .+ needed by .+ from .+$
