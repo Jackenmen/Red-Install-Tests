@@ -32,7 +32,10 @@ TRANSIENT_ERROR_PATTERN = _compile_pattern(
                     nothing provides .+ needed by .+ from .+$
                     |Curl error \((6|7|28|35|55|56)\):
                 )
-                |Error: Failed to download metadata for repo '[^']+': repomd\.xml parser error:
+                |Error: Failed to download metadata for repo '[^']+': (
+                    repomd\.xml parser error:
+                    |Yum repo downloading error:
+                )
             )
             |fedora-([a-z0-9\-]+)\.[a-z]+\.tests:
             \ >>> Status code: 503 for https://packages\.adoptium\.net
